@@ -1,0 +1,45 @@
+version: '3'
+
+silent: false
+
+env:
+  PATH_EXE: ./tmp/bin
+  PATH_MAIN_API: ./cmd/app
+  PATH_CONFIG: ./config/config.yaml
+  PORT: 8080
+
+dotenv: ['.env', '{{.PATH_CONFIG}}/.env']
+
+
+tasks:
+  test:
+    desc: Run tests
+    cmds:
+      - echo "Run tests"
+      - go test ./... -v -cover
+
+  build:
+    desc: Build the application
+    deps: [test]
+    cmds:
+      - echo "Build the application"
+      - go build -o {{.PATH_EXE}}/main.exe {{.PATH_MAIN_API}}/main.go
+
+  run:
+    desc: Run the application
+    # deps: [test]
+    cmds:
+      - echo "Run the application"
+      - go run {{.PATH_MAIN_API}}/main.go
+
+  air:
+    desc: Run air
+    deps: [test]
+    cmds:
+      - echo "Run air"
+      - air -d 
+
+  up:
+    desc: Run migrations
+    cmds:
+      - go run cmd/migrator/main.go
