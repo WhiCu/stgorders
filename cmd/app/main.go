@@ -5,12 +5,13 @@ import (
 	"log"
 
 	"github.com/WhiCu/stgorders/internal/app"
+	"github.com/WhiCu/stgorders/internal/config"
 )
 
 func main() {
-	// cfg := config.MustLoadWithEnv()
+	cfg := config.MustLoadWithDefault("./config/config.yaml")
 
-	app := app.NewApp(nil)
+	app := app.NewApp(cfg)
 
 	if err := app.Run(context.Background()); err != nil {
 		log.Fatal(err)

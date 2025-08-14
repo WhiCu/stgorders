@@ -1,33 +1,51 @@
 package config
 
 import (
-	"fmt"
 	"net"
 	"strings"
-	"time"
 )
 
 type ServerConfig struct {
-	Host         string        `yaml:"host" env:"HOST" env-default:"localhost"`
-	Port         string        `yaml:"port" env:"PORT" env-default:"8080"`
-	ReadTimeout  time.Duration `yaml:"read_timeout" env:"READ_TIMEOUT" env-default:"10s"`
-	WriteTimeout time.Duration `yaml:"write_timeout" env:"WRITE_TIMEOUT" env-default:"30s"`
-	IdleTimeout  time.Duration `yaml:"idle_timeout" env:"IDLE_TIMEOUT" env-default:"1m"`
+	Host string `yaml:"host" env:"HOST" env-default:"localhost"`
+	Port string `yaml:"port" env:"PORT" env-default:"8080"`
 }
 
 type StorageConfig struct {
-	Path string `yaml:"path" env:"STORAGE_PATH" env-default:"./storage"`
+	Host string `yaml:"host" env:"DB_HOST" env-default:"localhost"`
+	Port string `yaml:"port" env:"DB_PORT" env-default:"5432"`
+	User string `yaml:"user" env:"DB_USER" env-default:"user"`
+	Pass string `yaml:"pass" env:"DB_PASS" env-default:"password"`
+	Name string `yaml:"name" env:"DB_NAME" env-default:"l0_test"`
+}
+
+func (c *StorageConfig) DSN() string {
+	return "postgresql://" + c.User + ":" + c.Pass + "@" + c.Host + ":" + c.Port + "/" + c.Name + "?sslmode=disable"
 }
 
 type LoggerConfig struct {
 	Level string `yaml:"level" env:"LOG_LEVEL" env-default:"info"`
+	Path  string `yaml:"path" env:"LOG_PATH" env-default:""`
+	Size  int    `yaml:"size" env:"LOG_FILE_SIZE" env-default:"128"`
+}
+
+type WorkerPoolConfig struct {
+	Size int `yaml:"size" env:"WORKER_POOL_SIZE" env-default:"128"`
+	Buf  int `yaml:"buf" env:"WORKER_POOL_BUF" env-default:"128"`
+}
+
+type KafkaConfig struct {
+	Brokers []string `yaml:"brokers" env:"KAFKA_BROKERS" env-default:"localhost:9092"`
+	Topic   string   `yaml:"topic" env:"KAFKA_TOPIC" env-default:"test"`
+	GroupID string   `yaml:"group_id" env:"KAFKA_GROUP_ID" env-default:"test"`
+
+	WorkerPool WorkerPoolConfig `yaml:"worker_pool"`
 }
 
 type Config struct {
 	Server  ServerConfig  `yaml:"server"`
 	Storage StorageConfig `yaml:"storage"`
 	Logger  LoggerConfig  `yaml:"logger"`
-	API     API           `yaml:"api"`
+	Kafka   KafkaConfig   `yaml:"kafka"`
 }
 
 func (srv *ServerConfig) ServerAddr() string {
@@ -37,56 +55,5 @@ func (srv *ServerConfig) ServerAddr() string {
 func (c *Config) Format() string {
 	var b strings.Builder
 
-	fmt.Fprintf(&b, "Server:\n")
-	fmt.Fprintf(&b, "  Host:           %s\n", c.Server.Host)
-	fmt.Fprintf(&b, "  Port:           %s\n", c.Server.Port)
-	fmt.Fprintf(&b, "  ReadTimeout:    %s\n", c.Server.ReadTimeout)
-	fmt.Fprintf(&b, "  WriteTimeout:   %s\n", c.Server.WriteTimeout)
-	fmt.Fprintf(&b, "  IdleTimeout:    %s\n", c.Server.IdleTimeout)
-
-	fmt.Fprintf(&b, "\nStorage:\n")
-	fmt.Fprintf(&b, "  Path:           %s\n", c.Storage.Path)
-
-	fmt.Fprintf(&b, "\nLogger:\n")
-	fmt.Fprintf(&b, "  Level:          %s\n", c.Logger.Level)
-
-	fmt.Fprintf(&b, "\n*****\nAPI:\n")
-	fmt.Fprintf(&b, "%s", c.API.Format())
-
 	return b.String()
-}
-
-type API struct {
-	Task TaskConfig `yaml:"task"`
-	Arch ArchConfig `yaml:"arch"`
-}
-
-func (c *API) Format() string {
-	var b strings.Builder
-
-	fmt.Fprintf(&b, "Task:\n")
-	fmt.Fprintf(&b, "  Timeout:        %s\n", c.Task.Timeout)
-	fmt.Fprintf(&b, "  MaxTask:        %d\n", c.Task.MaxTask)
-	fmt.Fprintf(&b, "  MaxURL:         %d\n", c.Task.MaxURL)
-	fmt.Fprintf(&b, "  Ext:            %s\n", c.Task.Ext)
-	fmt.Fprintf(&b, "  Arch:           %s\n", c.Task.Arch)
-	fmt.Fprintf(&b, "  Path:           %s\n", c.Task.Path)
-
-	fmt.Fprintf(&b, "\nArch:\n")
-	fmt.Fprintf(&b, "  Path:           %s\n", c.Arch.Path)
-
-	return b.String()
-}
-
-type TaskConfig struct {
-	Timeout time.Duration `yaml:"timeout" env:"TASK_TIMEOUT" env-default:"5m"`
-	MaxTask int           `yaml:"max_task" env:"TASK_MAX" env-default:"3"`
-	MaxURL  int           `yaml:"max_url" env:"URL_MAX" env-default:"3"`
-	Ext     []string      `yaml:"ext" env:"EXT"`
-	Arch    string        `yaml:"arch" env:"ARCH"`
-	Path    string        `yaml:"path" env:"PATH_TASK" env-default:"tmp"`
-}
-
-type ArchConfig struct {
-	Path string `yaml:"path" env:"PATH_ARCH" env-default:"tmp"`
 }

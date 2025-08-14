@@ -24,7 +24,7 @@ func NewWorkerPool[T any](workers int, workerFn func(T) error, buf int) *WorkerP
 		go func() {
 			defer wp.wg.Done()
 			for task := range wp.tasks {
-				_ = workerFn(task) // Ошибки — на усмотрение пользователя
+				_ = workerFn(task)
 			}
 		}()
 	}

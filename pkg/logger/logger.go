@@ -1,0 +1,29 @@
+package logger
+
+import (
+	"fmt"
+	"log/slog"
+	"os"
+)
+
+func MustInitLogger(level string) slog.Handler {
+	const op = "logger.MustInitLogger"
+
+	var log slog.Handler
+
+	out := os.Stdout
+
+	switch level {
+	case "debug":
+		log = slog.NewTextHandler(out, &slog.HandlerOptions{
+			Level: slog.LevelDebug,
+		})
+	case "info":
+		log = slog.NewTextHandler(out, &slog.HandlerOptions{
+			Level: slog.LevelInfo,
+		})
+	default:
+		panic(fmt.Sprintf("%s: level - {%s} not in {debug, test, info}", op, level))
+	}
+	return log
+}

@@ -1,0 +1,21 @@
+logger:
+  level: "info" 
+  path: "./logs/kafka-consumer.log"
+  size: 128
+
+kafka:
+  brokers: 
+    - "localhost:9092"
+  topic: "test-topic"
+  group_id: "my-group"
+  worker_pool:
+    size: 128
+    buf: 128
+
+
+storage:
+    host: "localhost"
+    port: "5432"
+    user: "user"
+    password: "password"
+    db: "l0_test"
