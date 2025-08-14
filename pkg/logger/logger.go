@@ -22,8 +22,16 @@ func MustInitLogger(level string) slog.Handler {
 		log = slog.NewTextHandler(out, &slog.HandlerOptions{
 			Level: slog.LevelInfo,
 		})
+	case "warn":
+		log = slog.NewTextHandler(out, &slog.HandlerOptions{
+			Level: slog.LevelWarn,
+		})
+	case "error":
+		log = slog.NewTextHandler(out, &slog.HandlerOptions{
+			Level: slog.LevelError,
+		})
 	default:
-		panic(fmt.Sprintf("%s: level - {%s} not in {debug, test, info}", op, level))
+		panic(fmt.Sprintf("%s: level - {%s} not in {debug, info, warn, error}", op, level))
 	}
 	return log
 }

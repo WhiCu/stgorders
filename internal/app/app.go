@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"log"
 	"log/slog"
 	"net/http"
 	"os/signal"
@@ -24,6 +23,7 @@ type App struct {
 	done   chan error
 
 	cfg *config.Config
+	log *slog.Logger
 }
 
 func (a *App) gracefulShutdown(cl context.CancelFunc) {
@@ -32,18 +32,18 @@ func (a *App) gracefulShutdown(cl context.CancelFunc) {
 
 	<-ctx.Done()
 	cl()
-	log.Println("shutting down gracefully, press Ctrl+C again to force")
+	a.log.Info("shutting down gracefully, press Ctrl+C again to force")
 	stop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := a.server.Shutdown(ctx); err != nil {
-		log.Printf("Server forced to shutdown with error: %v", err)
+		a.log.Error("Server forced to shutdown with error", slog.String("ERR", err.Error()))
 		a.done <- err
 		return
 	}
 
-	log.Println("Server exiting")
+	a.log.Info("Server successfully shutdown")
 
 	a.done <- nil
 }
@@ -54,13 +54,14 @@ func NewApp(cfg *config.Config) *App {
 	log.Info("logger created", slog.String("level", cfg.Logger.Level), slog.String("path", cfg.Logger.Path), slog.Int("size", cfg.Logger.Size))
 
 	// Create handler
-	h := kc.NewKafkaConsumer(log.With(slog.String("handler", "kafka-consumer")), cfg.Kafka)
+	h := kc.NewKafkaConsumer(log.WithGroup("kafka-consumer"), cfg.Kafka)
 	log.Info("handler created", slog.String("brokers", strings.Join(cfg.Kafka.Brokers, ", ")), slog.String("group_id", cfg.Kafka.GroupID), slog.String("topic", cfg.Kafka.Topic))
 
 	return &App{
 		server: h,
 		done:   make(chan error),
 		cfg:    cfg,
+		log:    log,
 	}
 }
 
@@ -71,7 +72,7 @@ func (a *App) Run(ctx context.Context) error {
 	go a.gracefulShutdown(cancel)
 
 	if err := a.server.ListenAndServe(ctx); err != nil && err != http.ErrServerClosed {
-		log.Printf("could not listen: %s\n", err)
+		a.log.Error("could not listen", slog.String("ERR", err.Error()))
 		return err
 	}
 

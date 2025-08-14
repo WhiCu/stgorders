@@ -14,7 +14,7 @@ func main() {
 	app := app.NewApp(cfg)
 
 	if err := app.Run(context.Background()); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	log.Println("Server exited")
 }
