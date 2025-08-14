@@ -1,32 +1,18 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"log"
 
 	"github.com/WhiCu/stgorders/internal/app"
-	"github.com/WhiCu/stgorders/internal/config"
 )
 
 func main() {
-	cfg := config.MustLoadWithEnv()
+	// cfg := config.MustLoadWithEnv()
 
-	app := app.NewApp(cfg)
+	app := app.NewApp(nil)
 
-	fmt.Printf(`
-=============================================
-
-Server is running on %s
-
-=============================================
-Configuration:
-
-%s
-
-=============================================
-`, cfg.Server.ServerAddr(), cfg.Format())
-
-	if err := app.Run(); err != nil {
+	if err := app.Run(context.Background()); err != nil {
 		log.Fatal(err)
 	}
 	log.Println("Server exited")
