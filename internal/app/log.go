@@ -17,6 +17,7 @@ func getLogger(cfg *config.LoggerConfig) *slog.Logger {
 			Filename:  cfg.Path,
 			MaxSize:   cfg.Size,
 			LocalTime: true,
+			Compress:  cfg.Compress,
 		}
 
 		h = append(h, slog.NewJSONHandler(logFile, &slog.HandlerOptions{
@@ -26,7 +27,6 @@ func getLogger(cfg *config.LoggerConfig) *slog.Logger {
 
 	h = append(h, logger.MustInitLogger(cfg.Level))
 
-	// return slog.New(logger.NewMultiHandler(h...))
 	return slog.New(slogmulti.Fanout(h...))
 
 }

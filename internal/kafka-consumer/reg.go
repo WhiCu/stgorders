@@ -9,13 +9,15 @@ import (
 )
 
 func NewKafkaConsumer(log *slog.Logger, cfg config.KafkaConfig) *handler.Handler {
-	return handler.NewHandler(log.WithGroup("handler"), handler.ConsumerConfig{
-		Brokers:        cfg.Brokers,
-		GroupID:        cfg.GroupID,
-		Topic:          cfg.Topic,
-		WorkerPoolSize: cfg.WorkerPool.Size,
-		WorkerPoolBuf:  cfg.WorkerPool.Buf,
-	},
+	return handler.NewHandler(
+		log.WithGroup("handler"),
+		handler.ConsumerConfig{
+			Brokers:        cfg.Brokers,
+			GroupID:        cfg.GroupID,
+			Topic:          cfg.Topic,
+			WorkerPoolSize: cfg.WorkerPool.Size,
+			WorkerPoolBuf:  cfg.WorkerPool.Buf,
+		},
 		initService(log),
 	)
 }

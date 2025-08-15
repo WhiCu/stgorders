@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"time"
+
+	"gitlab.com/greyxor/slogor"
 )
 
 func MustInitLogger(level string) slog.Handler {
@@ -15,21 +18,13 @@ func MustInitLogger(level string) slog.Handler {
 
 	switch level {
 	case "debug":
-		log = slog.NewTextHandler(out, &slog.HandlerOptions{
-			Level: slog.LevelDebug,
-		})
+		log = slogor.NewHandler(out, slogor.SetLevel(slog.LevelDebug), slogor.SetTimeFormat(time.ANSIC))
 	case "info":
-		log = slog.NewTextHandler(out, &slog.HandlerOptions{
-			Level: slog.LevelInfo,
-		})
+		log = slogor.NewHandler(out, slogor.SetLevel(slog.LevelInfo), slogor.SetTimeFormat(time.ANSIC))
 	case "warn":
-		log = slog.NewTextHandler(out, &slog.HandlerOptions{
-			Level: slog.LevelWarn,
-		})
+		log = slogor.NewHandler(out, slogor.SetLevel(slog.LevelWarn), slogor.SetTimeFormat(time.ANSIC))
 	case "error":
-		log = slog.NewTextHandler(out, &slog.HandlerOptions{
-			Level: slog.LevelError,
-		})
+		log = slogor.NewHandler(out, slogor.SetLevel(slog.LevelError), slogor.SetTimeFormat(time.ANSIC))
 	default:
 		panic(fmt.Sprintf("%s: level - {%s} not in {debug, info, warn, error}", op, level))
 	}

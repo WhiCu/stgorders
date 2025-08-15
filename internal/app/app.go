@@ -51,11 +51,20 @@ func (a *App) gracefulShutdown(cl context.CancelFunc) {
 func NewApp(cfg *config.Config) *App {
 	// Create logger
 	log := getLogger(&cfg.Logger)
-	log.Info("logger created", slog.String("level", cfg.Logger.Level), slog.String("path", cfg.Logger.Path), slog.Int("size", cfg.Logger.Size))
+	log.Info("logger created",
+		slog.String("level", cfg.Logger.Level),
+		slog.String("path", cfg.Logger.Path),
+		slog.Int("size", cfg.Logger.Size),
+		slog.Bool("compress", cfg.Logger.Compress),
+	)
 
 	// Create handler
 	h := kc.NewKafkaConsumer(log.WithGroup("kafka-consumer"), cfg.Kafka)
-	log.Info("handler created", slog.String("brokers", strings.Join(cfg.Kafka.Brokers, ", ")), slog.String("group_id", cfg.Kafka.GroupID), slog.String("topic", cfg.Kafka.Topic))
+	log.Info("handler created",
+		slog.String("brokers", strings.Join(cfg.Kafka.Brokers, ", ")),
+		slog.String("group_id", cfg.Kafka.GroupID),
+		slog.String("topic", cfg.Kafka.Topic),
+	)
 
 	return &App{
 		server: h,

@@ -10,7 +10,7 @@ import (
 )
 
 type service interface {
-	Serve(data []byte) error
+	Serve(ctx context.Context, data []byte) error
 }
 
 type Handler struct {
@@ -21,7 +21,7 @@ type Handler struct {
 	workerPool *worker.WorkerPool[*kafka.Message]
 
 	// service
-	service *service
+	service service
 
 	// logger
 	log *slog.Logger
@@ -51,10 +51,13 @@ func NewHandler(log *slog.Logger, cfg ConsumerConfig, s service) *Handler {
 
 	wp := worker.NewWorkerPool(
 		cfg.WorkerPoolSize,
-		func(m *kafka.Message) error {
+		func(m *kafka.Message) (err error) {
 			log.Debug("message processed", slog.String("topic", m.Topic), slog.Time("partition", m.Time))
-			s.Serve(m.Value)
-			return c.CommitMessages(context.Background(), *m)
+			s.Serve(context.Background(), m.Value)
+			if err = c.CommitMessages(context.Background(), *m); err != nil {
+				log.Error("could not commit message", slog.String("ERR", err.Error()))
+			}
+			return err
 		},
 		cfg.WorkerPoolBuf,
 	)
@@ -63,6 +66,7 @@ func NewHandler(log *slog.Logger, cfg ConsumerConfig, s service) *Handler {
 		consumer:   c,
 		workerPool: wp,
 		log:        log,
+		service:    s,
 	}
 }
 
@@ -77,12 +81,15 @@ func (h *Handler) ListenAndServe(ctx context.Context) error {
 			m, err := h.consumer.FetchMessage(ctx)
 			if err != nil {
 				if ctx.Err() != nil {
+					h.log.Debug("context canceled", slog.String("ERR", err.Error()))
 					return nil
 				}
+				h.log.Error("could not fetch message", slog.String("ERR", err.Error()))
 				return err
 			}
 			h.log.Debug("message fetched")
 			if !h.workerPool.Serve(&m) {
+				h.log.Debug("WorkerPool is full")
 				return nil
 			}
 			h.log.Debug("message processed")
@@ -93,10 +100,12 @@ func (h *Handler) ListenAndServe(ctx context.Context) error {
 func (h *Handler) Shutdown(ctx context.Context) (err error) {
 	h.log.Debug("shutting down workers")
 	if err = h.workerPool.StopAndWaitContext(ctx); err != nil {
+		h.log.Error("could not stop workers", slog.String("ERR", err.Error()))
 		return err
 	}
 	h.log.Debug("shutting down")
 	if err = h.Close(); err != nil {
+		h.log.Error("could not close consumer", slog.String("ERR", err.Error()))
 		return err
 	}
 	h.log.Debug("shutting down done")

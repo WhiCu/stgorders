@@ -23,9 +23,10 @@ func (c *StorageConfig) DSN() string {
 }
 
 type LoggerConfig struct {
-	Level string `yaml:"level" env:"LOG_LEVEL" env-default:"info"`
-	Path  string `yaml:"path" env:"LOG_PATH" env-default:""`
-	Size  int    `yaml:"size" env:"LOG_FILE_SIZE" env-default:"128"`
+	Level    string `yaml:"level" env:"LOG_LEVEL" env-default:"info"`
+	Path     string `yaml:"path" env:"LOG_PATH" env-default:""`
+	Size     int    `yaml:"size" env:"LOG_FILE_SIZE" env-default:"128"`
+	Compress bool   `yaml:"compress" env:"LOG_COMPRESS" env-default:"false"`
 }
 
 type WorkerPoolConfig struct {
