@@ -53,13 +53,18 @@ func NewHandler(log *slog.Logger, cfg ConsumerConfig, s service) *Handler {
 		cfg.WorkerPoolSize,
 		func(m *kafka.Message) (err error) {
 			log.Debug("message processed", slog.String("topic", m.Topic), slog.Time("partition", m.Time))
-			s.Serve(context.Background(), m.Value)
+			if err = s.Serve(context.Background(), m.Value); err != nil {
+				log.Error("could not serve message", slog.String("ERR", err.Error()))
+				return err
+			}
 			if err = c.CommitMessages(context.Background(), *m); err != nil {
 				log.Error("could not commit message", slog.String("ERR", err.Error()))
+				return err
 			}
-			return err
+			return nil
 		},
 		cfg.WorkerPoolBuf,
+		log.WithGroup("worker-pool"),
 	)
 
 	return &Handler{
@@ -70,8 +75,7 @@ func NewHandler(log *slog.Logger, cfg ConsumerConfig, s service) *Handler {
 	}
 }
 
-func (h *Handler) ListenAndServe(ctx context.Context) error {
-
+func (h *Handler) ListenAndServe(ctx context.Context) (err error) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -98,6 +102,7 @@ func (h *Handler) ListenAndServe(ctx context.Context) error {
 }
 
 func (h *Handler) Shutdown(ctx context.Context) (err error) {
+
 	h.log.Debug("shutting down workers")
 	if err = h.workerPool.StopAndWaitContext(ctx); err != nil {
 		h.log.Error("could not stop workers", slog.String("ERR", err.Error()))
@@ -108,7 +113,7 @@ func (h *Handler) Shutdown(ctx context.Context) (err error) {
 		h.log.Error("could not close consumer", slog.String("ERR", err.Error()))
 		return err
 	}
-	h.log.Debug("shutting down done")
+	h.log.Debug("successfully shutting down")
 	return nil
 }
 func (h *Handler) Close() error {

@@ -7,13 +7,11 @@ package pg
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
+	"time"
 )
 
 const createDelivery = `-- name: CreateDelivery :one
 INSERT INTO delivery (
-    order_id,
     name,
     phone,
     zip,
@@ -22,13 +20,12 @@ INSERT INTO delivery (
     region,
     email
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8
+    $1, $2, $3, $4, $5, $6, $7
 )
 RETURNING id
 `
 
 type CreateDeliveryParams struct {
-	OrderID int64
 	Name    string
 	Phone   string
 	Zip     string
@@ -40,7 +37,6 @@ type CreateDeliveryParams struct {
 
 func (q *Queries) CreateDelivery(ctx context.Context, arg CreateDeliveryParams) (int64, error) {
 	row := q.db.QueryRow(ctx, createDelivery,
-		arg.OrderID,
 		arg.Name,
 		arg.Phone,
 		arg.Zip,
@@ -56,7 +52,6 @@ func (q *Queries) CreateDelivery(ctx context.Context, arg CreateDeliveryParams) 
 
 const createItem = `-- name: CreateItem :one
 INSERT INTO items (
-    order_id,
     chrt_id,
     track_number,
     price,
@@ -69,13 +64,12 @@ INSERT INTO items (
     brand,
     status
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
 )
 RETURNING id
 `
 
 type CreateItemParams struct {
-	OrderID     int64
 	ChrtID      int64
 	TrackNumber string
 	Price       int32
@@ -91,7 +85,6 @@ type CreateItemParams struct {
 
 func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (int64, error) {
 	row := q.db.QueryRow(ctx, createItem,
-		arg.OrderID,
 		arg.ChrtID,
 		arg.TrackNumber,
 		arg.Price,
@@ -138,7 +131,7 @@ type CreateOrderParams struct {
 	DeliveryService   string
 	Shardkey          string
 	SmID              int32
-	DateCreated       pgtype.Timestamp
+	DateCreated       time.Time
 	OofShard          string
 }
 
@@ -163,7 +156,6 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (int64
 
 const createPayment = `-- name: CreatePayment :one
 INSERT INTO payment (
-    order_id,
     transaction,
     request_id,
     currency,
@@ -175,13 +167,12 @@ INSERT INTO payment (
     goods_total,
     custom_fee
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
 )
 RETURNING id
 `
 
 type CreatePaymentParams struct {
-	OrderID      int64
 	Transaction  string
 	RequestID    string
 	Currency     string
@@ -196,7 +187,6 @@ type CreatePaymentParams struct {
 
 func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) (int64, error) {
 	row := q.db.QueryRow(ctx, createPayment,
-		arg.OrderID,
 		arg.Transaction,
 		arg.RequestID,
 		arg.Currency,
@@ -254,7 +244,7 @@ func (q *Queries) DeletePayment(ctx context.Context, id int64) error {
 }
 
 const getDeliveryByID = `-- name: GetDeliveryByID :one
-SELECT id, order_id, name, phone, zip, city, address, region, email FROM delivery
+SELECT id, name, phone, zip, city, address, region, email FROM delivery
 WHERE id = $1
 `
 
@@ -263,7 +253,6 @@ func (q *Queries) GetDeliveryByID(ctx context.Context, id int64) (Delivery, erro
 	var i Delivery
 	err := row.Scan(
 		&i.ID,
-		&i.OrderID,
 		&i.Name,
 		&i.Phone,
 		&i.Zip,
@@ -276,7 +265,7 @@ func (q *Queries) GetDeliveryByID(ctx context.Context, id int64) (Delivery, erro
 }
 
 const getItemByID = `-- name: GetItemByID :one
-SELECT id, order_id, chrt_id, track_number, price, rid, name, sale, size, total_price, nm_id, brand, status FROM items
+SELECT id, chrt_id, track_number, price, rid, name, sale, size, total_price, nm_id, brand, status FROM items
 WHERE id = $1
 `
 
@@ -285,7 +274,6 @@ func (q *Queries) GetItemByID(ctx context.Context, id int64) (Item, error) {
 	var i Item
 	err := row.Scan(
 		&i.ID,
-		&i.OrderID,
 		&i.ChrtID,
 		&i.TrackNumber,
 		&i.Price,
@@ -327,7 +315,7 @@ func (q *Queries) GetOrderByID(ctx context.Context, id int64) (Order, error) {
 }
 
 const getPaymentByID = `-- name: GetPaymentByID :one
-SELECT id, order_id, transaction, request_id, currency, provider, amount, payment_dt, bank, delivery_cost, goods_total, custom_fee FROM payment
+SELECT id, transaction, request_id, currency, provider, amount, payment_dt, bank, delivery_cost, goods_total, custom_fee FROM payment
 WHERE id = $1
 `
 
@@ -336,7 +324,6 @@ func (q *Queries) GetPaymentByID(ctx context.Context, id int64) (Payment, error)
 	var i Payment
 	err := row.Scan(
 		&i.ID,
-		&i.OrderID,
 		&i.Transaction,
 		&i.RequestID,
 		&i.Currency,
@@ -353,7 +340,7 @@ func (q *Queries) GetPaymentByID(ctx context.Context, id int64) (Payment, error)
 
 const listDeliveries = `-- name: ListDeliveries :many
 
-SELECT id, order_id, name, phone, zip, city, address, region, email FROM delivery
+SELECT id, name, phone, zip, city, address, region, email FROM delivery
 `
 
 // =======================
@@ -370,7 +357,6 @@ func (q *Queries) ListDeliveries(ctx context.Context) ([]Delivery, error) {
 		var i Delivery
 		if err := rows.Scan(
 			&i.ID,
-			&i.OrderID,
 			&i.Name,
 			&i.Phone,
 			&i.Zip,
@@ -391,7 +377,7 @@ func (q *Queries) ListDeliveries(ctx context.Context) ([]Delivery, error) {
 
 const listItems = `-- name: ListItems :many
 
-SELECT id, order_id, chrt_id, track_number, price, rid, name, sale, size, total_price, nm_id, brand, status FROM items
+SELECT id, chrt_id, track_number, price, rid, name, sale, size, total_price, nm_id, brand, status FROM items
 `
 
 // =======================
@@ -408,7 +394,6 @@ func (q *Queries) ListItems(ctx context.Context) ([]Item, error) {
 		var i Item
 		if err := rows.Scan(
 			&i.ID,
-			&i.OrderID,
 			&i.ChrtID,
 			&i.TrackNumber,
 			&i.Price,
@@ -474,7 +459,7 @@ func (q *Queries) ListOrders(ctx context.Context) ([]Order, error) {
 
 const listPayments = `-- name: ListPayments :many
 
-SELECT id, order_id, transaction, request_id, currency, provider, amount, payment_dt, bank, delivery_cost, goods_total, custom_fee FROM payment
+SELECT id, transaction, request_id, currency, provider, amount, payment_dt, bank, delivery_cost, goods_total, custom_fee FROM payment
 `
 
 // =======================
@@ -491,7 +476,6 @@ func (q *Queries) ListPayments(ctx context.Context) ([]Payment, error) {
 		var i Payment
 		if err := rows.Scan(
 			&i.ID,
-			&i.OrderID,
 			&i.Transaction,
 			&i.RequestID,
 			&i.Currency,
@@ -627,7 +611,7 @@ type UpdateOrderParams struct {
 	DeliveryService   string
 	Shardkey          string
 	SmID              int32
-	DateCreated       pgtype.Timestamp
+	DateCreated       time.Time
 	OofShard          string
 }
 

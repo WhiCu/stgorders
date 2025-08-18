@@ -59,7 +59,6 @@ WHERE id = $1;
 
 -- name: CreateDelivery :one
 INSERT INTO delivery (
-    order_id,
     name,
     phone,
     zip,
@@ -68,7 +67,7 @@ INSERT INTO delivery (
     region,
     email
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8
+    $1, $2, $3, $4, $5, $6, $7
 )
 RETURNING id;
 
@@ -101,7 +100,6 @@ WHERE id = $1;
 
 -- name: CreatePayment :one
 INSERT INTO payment (
-    order_id,
     transaction,
     request_id,
     currency,
@@ -113,7 +111,7 @@ INSERT INTO payment (
     goods_total,
     custom_fee
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
 )
 RETURNING id;
 
@@ -149,7 +147,6 @@ WHERE id = $1;
 
 -- name: CreateItem :one
 INSERT INTO items (
-    order_id,
     chrt_id,
     track_number,
     price,
@@ -162,7 +159,7 @@ INSERT INTO items (
     brand,
     status
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
 )
 RETURNING id;
 
@@ -185,8 +182,3 @@ WHERE id = $1;
 -- name: DeleteItem :exec
 DELETE FROM items
 WHERE id = $1;
-
--- =======================
--- CREATE FULL ORDER
--- =======================
-

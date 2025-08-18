@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"fmt"
 
 	"github.com/WhiCu/stgorders/internal/app"
 	"github.com/WhiCu/stgorders/internal/config"
@@ -13,8 +13,16 @@ func main() {
 
 	app := app.NewApp(cfg)
 
-	if err := app.Run(context.Background()); err != nil {
+	ctx := context.Background()
+
+	if err := app.Run(ctx); err != nil {
 		panic(err)
 	}
-	log.Println("Server exited")
+	fmt.Println(`
+	=================================
+	=                               =
+	=    Server successfully run    =
+	=                               =
+	=================================
+	`)
 }

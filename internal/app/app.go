@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"log/slog"
-	"net/http"
 	"os/signal"
 	"strings"
 	"syscall"
@@ -11,6 +10,8 @@ import (
 
 	"github.com/WhiCu/stgorders/internal/config"
 	kc "github.com/WhiCu/stgorders/internal/kafka-consumer"
+	"github.com/WhiCu/stgorders/internal/kafka-consumer/client"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type consumer interface {
@@ -26,8 +27,8 @@ type App struct {
 	log *slog.Logger
 }
 
-func (a *App) gracefulShutdown(cl context.CancelFunc) {
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+func (a *App) gracefulShutdown(ctx context.Context, cl context.CancelFunc) {
+	ctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	<-ctx.Done()
@@ -58,8 +59,14 @@ func NewApp(cfg *config.Config) *App {
 		slog.Bool("compress", cfg.Logger.Compress),
 	)
 
+	p, err := pgxpool.New(context.Background(), cfg.Storage.DSN())
+	if err != nil {
+		panic(err)
+	}
+	stg := client.NewStorage(p)
+
 	// Create handler
-	h := kc.NewKafkaConsumer(log.WithGroup("kafka-consumer"), cfg.Kafka)
+	h := kc.NewKafkaConsumer(log.WithGroup("kafka-consumer"), cfg.Kafka, stg)
 	log.Info("handler created",
 		slog.String("brokers", strings.Join(cfg.Kafka.Brokers, ", ")),
 		slog.String("group_id", cfg.Kafka.GroupID),
@@ -78,12 +85,31 @@ func (a *App) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	go a.gracefulShutdown(cancel)
+	go a.gracefulShutdown(ctx, cancel)
 
-	if err := a.server.ListenAndServe(ctx); err != nil && err != http.ErrServerClosed {
+	a.log.Info("starting server")
+	if err := a.server.ListenAndServe(ctx); err != nil {
 		a.log.Error("could not listen", slog.String("ERR", err.Error()))
 		return err
 	}
 
 	return <-a.done
+}
+
+func (a *App) RunWithRecover(ctx context.Context) (err error) {
+	for {
+		err = func() error {
+			defer func() {
+				if r := recover(); r != nil {
+					log := a.log.WithGroup("panic")
+					log.Error("recovered from panic", slog.Any("ERR", r))
+				}
+			}()
+			return a.Run(ctx)
+		}()
+		if err != nil {
+			a.log.Error("could not run", slog.String("ERR", err.Error()))
+			return err
+		}
+	}
 }

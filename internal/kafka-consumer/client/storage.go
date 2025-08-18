@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"log"
 
 	"github.com/WhiCu/stgorders/db/pg"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -15,6 +16,7 @@ type Storage struct {
 }
 
 func NewStorage(conn *pgxpool.Pool) *Storage {
+	log.Println("storage created")
 	db := pg.New(conn)
 	return &Storage{
 		Queries: db,

@@ -1,57 +1,54 @@
 create table orders (
     id bigint primary key generated always as identity,
-    order_uid text unique,
-    track_number text,
-    entry text,
-    locale text,
-    internal_signature text,
-    customer_id text,
-    delivery_service text,
-    shardkey text,
-    sm_id int,
-    date_created timestamp,
-    oof_shard text
+    order_uid text unique not null,
+    track_number text unique not null,
+    entry text not null,
+    locale text not null,
+    internal_signature text not null,
+    customer_id text not null,
+    delivery_service text not null,
+    shardkey text not null,
+    sm_id int not null,
+    date_created timestamp not null,
+    oof_shard text not null
 );
 
 create table delivery (
     id bigint primary key generated always as identity,
-    order_id bigint references orders (id),
-    name text,
-    phone text,
-    zip text,
-    city text,
-    address text,
-    region text,
-    email text
+    name text not null,
+    phone text not null,
+    zip text not null,
+    city text not null,
+    address text not null,
+    region text not null,
+    email text not null
 );
 
 create table payment (
     id bigint primary key generated always as identity,
-    order_id bigint references orders (id),
-    transaction text,
-    request_id text,
-    currency text,
-    provider text,
-    amount int,
-    payment_dt bigint,
-    bank text,
-    delivery_cost int,
-    goods_total int,
-    custom_fee int
+    transaction text not null references orders (order_uid),
+    request_id text not null,
+    currency text not null,
+    provider text not null,
+    amount int not null,
+    payment_dt bigint not null,
+    bank text not null,
+    delivery_cost int not null,
+    goods_total int not null,
+    custom_fee int not null
 );
 
 create table items (
     id bigint primary key generated always as identity,
-    order_id bigint references orders (id),
-    chrt_id bigint,
-    track_number text,
-    price int,
-    rid text,
-    name text,
-    sale int,
-    size text,
-    total_price int,
-    nm_id bigint,
-    brand text,
-    status int
+    chrt_id bigint not null,
+    track_number text not null references orders (track_number),
+    price int not null,
+    rid text not null,
+    name text not null,
+    sale int not null,
+    size text not null,
+    total_price int not null,
+    nm_id bigint not null,
+    brand text not null,
+    status int not null
 );

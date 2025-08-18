@@ -5,12 +5,11 @@
 package pg
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
+	"time"
 )
 
 type Delivery struct {
 	ID      int64
-	OrderID int64
 	Name    string
 	Phone   string
 	Zip     string
@@ -22,7 +21,6 @@ type Delivery struct {
 
 type Item struct {
 	ID          int64
-	OrderID     int64
 	ChrtID      int64
 	TrackNumber string
 	Price       int32
@@ -47,13 +45,12 @@ type Order struct {
 	DeliveryService   string
 	Shardkey          string
 	SmID              int32
-	DateCreated       pgtype.Timestamp
+	DateCreated       time.Time
 	OofShard          string
 }
 
 type Payment struct {
 	ID           int64
-	OrderID      int64
 	Transaction  string
 	RequestID    string
 	Currency     string

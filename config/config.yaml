@@ -10,7 +10,7 @@ kafka:
   topic: "test-topic"
   group_id: "my-group"
   worker_pool:
-    size: 128
+    size: 10
     buf: 128
 
 
