@@ -10,6 +10,7 @@ import (
 
 type Delivery struct {
 	ID      int64
+	OrderID string
 	Name    string
 	Phone   string
 	Zip     string

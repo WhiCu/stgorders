@@ -12,6 +12,7 @@ import (
 
 const createDelivery = `-- name: CreateDelivery :one
 INSERT INTO delivery (
+    order_id,
     name,
     phone,
     zip,
@@ -20,12 +21,13 @@ INSERT INTO delivery (
     region,
     email
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
+    $1, $2, $3, $4, $5, $6, $7, $8
 )
 RETURNING id
 `
 
 type CreateDeliveryParams struct {
+	OrderID string
 	Name    string
 	Phone   string
 	Zip     string
@@ -37,6 +39,7 @@ type CreateDeliveryParams struct {
 
 func (q *Queries) CreateDelivery(ctx context.Context, arg CreateDeliveryParams) (int64, error) {
 	row := q.db.QueryRow(ctx, createDelivery,
+		arg.OrderID,
 		arg.Name,
 		arg.Phone,
 		arg.Zip,
@@ -203,56 +206,18 @@ func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) (i
 	return id, err
 }
 
-const deleteDelivery = `-- name: DeleteDelivery :exec
-DELETE FROM delivery
-WHERE id = $1
+const getDeliveryByOrderUID = `-- name: GetDeliveryByOrderUID :one
+SELECT id, order_id, name, phone, zip, city, address, region, email
+FROM delivery
+WHERE order_id = $1
 `
 
-func (q *Queries) DeleteDelivery(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, deleteDelivery, id)
-	return err
-}
-
-const deleteItem = `-- name: DeleteItem :exec
-DELETE FROM items
-WHERE id = $1
-`
-
-func (q *Queries) DeleteItem(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, deleteItem, id)
-	return err
-}
-
-const deleteOrder = `-- name: DeleteOrder :exec
-DELETE FROM orders
-WHERE id = $1
-`
-
-func (q *Queries) DeleteOrder(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, deleteOrder, id)
-	return err
-}
-
-const deletePayment = `-- name: DeletePayment :exec
-DELETE FROM payment
-WHERE id = $1
-`
-
-func (q *Queries) DeletePayment(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, deletePayment, id)
-	return err
-}
-
-const getDeliveryByID = `-- name: GetDeliveryByID :one
-SELECT id, name, phone, zip, city, address, region, email FROM delivery
-WHERE id = $1
-`
-
-func (q *Queries) GetDeliveryByID(ctx context.Context, id int64) (Delivery, error) {
-	row := q.db.QueryRow(ctx, getDeliveryByID, id)
+func (q *Queries) GetDeliveryByOrderUID(ctx context.Context, orderID string) (Delivery, error) {
+	row := q.db.QueryRow(ctx, getDeliveryByOrderUID, orderID)
 	var i Delivery
 	err := row.Scan(
 		&i.ID,
+		&i.OrderID,
 		&i.Name,
 		&i.Phone,
 		&i.Zip,
@@ -264,38 +229,93 @@ func (q *Queries) GetDeliveryByID(ctx context.Context, id int64) (Delivery, erro
 	return i, err
 }
 
-const getItemByID = `-- name: GetItemByID :one
-SELECT id, chrt_id, track_number, price, rid, name, sale, size, total_price, nm_id, brand, status FROM items
-WHERE id = $1
+const getItemsByTrackNumber = `-- name: GetItemsByTrackNumber :many
+SELECT id, chrt_id, track_number, price, rid, name, sale, size, total_price, nm_id, brand, status
+FROM items
+WHERE track_number = $1
 `
 
-func (q *Queries) GetItemByID(ctx context.Context, id int64) (Item, error) {
-	row := q.db.QueryRow(ctx, getItemByID, id)
-	var i Item
-	err := row.Scan(
-		&i.ID,
-		&i.ChrtID,
-		&i.TrackNumber,
-		&i.Price,
-		&i.Rid,
-		&i.Name,
-		&i.Sale,
-		&i.Size,
-		&i.TotalPrice,
-		&i.NmID,
-		&i.Brand,
-		&i.Status,
-	)
-	return i, err
+func (q *Queries) GetItemsByTrackNumber(ctx context.Context, trackNumber string) ([]Item, error) {
+	rows, err := q.db.Query(ctx, getItemsByTrackNumber, trackNumber)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Item
+	for rows.Next() {
+		var i Item
+		if err := rows.Scan(
+			&i.ID,
+			&i.ChrtID,
+			&i.TrackNumber,
+			&i.Price,
+			&i.Rid,
+			&i.Name,
+			&i.Sale,
+			&i.Size,
+			&i.TotalPrice,
+			&i.NmID,
+			&i.Brand,
+			&i.Status,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
-const getOrderByID = `-- name: GetOrderByID :one
-SELECT id, order_uid, track_number, entry, locale, internal_signature, customer_id, delivery_service, shardkey, sm_id, date_created, oof_shard FROM orders
-WHERE id = $1
+const getLastOrders = `-- name: GetLastOrders :many
+SELECT id, order_uid, track_number, entry, locale, internal_signature, customer_id, delivery_service, shardkey, sm_id, date_created, oof_shard
+FROM orders
+ORDER BY id DESC
+LIMIT $1
 `
 
-func (q *Queries) GetOrderByID(ctx context.Context, id int64) (Order, error) {
-	row := q.db.QueryRow(ctx, getOrderByID, id)
+func (q *Queries) GetLastOrders(ctx context.Context, limit int32) ([]Order, error) {
+	rows, err := q.db.Query(ctx, getLastOrders, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Order
+	for rows.Next() {
+		var i Order
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrderUid,
+			&i.TrackNumber,
+			&i.Entry,
+			&i.Locale,
+			&i.InternalSignature,
+			&i.CustomerID,
+			&i.DeliveryService,
+			&i.Shardkey,
+			&i.SmID,
+			&i.DateCreated,
+			&i.OofShard,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getOrderByUID = `-- name: GetOrderByUID :one
+SELECT id, order_uid, track_number, entry, locale, internal_signature, customer_id, delivery_service, shardkey, sm_id, date_created, oof_shard
+FROM orders
+WHERE order_uid = $1
+`
+
+func (q *Queries) GetOrderByUID(ctx context.Context, orderUid string) (Order, error) {
+	row := q.db.QueryRow(ctx, getOrderByUID, orderUid)
 	var i Order
 	err := row.Scan(
 		&i.ID,
@@ -314,13 +334,14 @@ func (q *Queries) GetOrderByID(ctx context.Context, id int64) (Order, error) {
 	return i, err
 }
 
-const getPaymentByID = `-- name: GetPaymentByID :one
-SELECT id, transaction, request_id, currency, provider, amount, payment_dt, bank, delivery_cost, goods_total, custom_fee FROM payment
-WHERE id = $1
+const getPaymentByTransaction = `-- name: GetPaymentByTransaction :one
+SELECT id, transaction, request_id, currency, provider, amount, payment_dt, bank, delivery_cost, goods_total, custom_fee
+FROM payment
+WHERE transaction = $1
 `
 
-func (q *Queries) GetPaymentByID(ctx context.Context, id int64) (Payment, error) {
-	row := q.db.QueryRow(ctx, getPaymentByID, id)
+func (q *Queries) GetPaymentByTransaction(ctx context.Context, transaction string) (Payment, error) {
+	row := q.db.QueryRow(ctx, getPaymentByTransaction, transaction)
 	var i Payment
 	err := row.Scan(
 		&i.ID,
@@ -340,7 +361,7 @@ func (q *Queries) GetPaymentByID(ctx context.Context, id int64) (Payment, error)
 
 const listDeliveries = `-- name: ListDeliveries :many
 
-SELECT id, name, phone, zip, city, address, region, email FROM delivery
+SELECT id, order_id, name, phone, zip, city, address, region, email FROM delivery
 `
 
 // =======================
@@ -357,6 +378,7 @@ func (q *Queries) ListDeliveries(ctx context.Context) ([]Delivery, error) {
 		var i Delivery
 		if err := rows.Scan(
 			&i.ID,
+			&i.OrderID,
 			&i.Name,
 			&i.Phone,
 			&i.Zip,
@@ -495,186 +517,4 @@ func (q *Queries) ListPayments(ctx context.Context) ([]Payment, error) {
 		return nil, err
 	}
 	return items, nil
-}
-
-const updateDelivery = `-- name: UpdateDelivery :exec
-UPDATE delivery
-SET
-    name = $2,
-    phone = $3,
-    zip = $4,
-    city = $5,
-    address = $6,
-    region = $7,
-    email = $8
-WHERE id = $1
-`
-
-type UpdateDeliveryParams struct {
-	ID      int64
-	Name    string
-	Phone   string
-	Zip     string
-	City    string
-	Address string
-	Region  string
-	Email   string
-}
-
-func (q *Queries) UpdateDelivery(ctx context.Context, arg UpdateDeliveryParams) error {
-	_, err := q.db.Exec(ctx, updateDelivery,
-		arg.ID,
-		arg.Name,
-		arg.Phone,
-		arg.Zip,
-		arg.City,
-		arg.Address,
-		arg.Region,
-		arg.Email,
-	)
-	return err
-}
-
-const updateItem = `-- name: UpdateItem :exec
-UPDATE items
-SET
-    chrt_id = $2,
-    track_number = $3,
-    price = $4,
-    rid = $5,
-    name = $6,
-    sale = $7,
-    size = $8,
-    total_price = $9,
-    nm_id = $10,
-    brand = $11,
-    status = $12
-WHERE id = $1
-`
-
-type UpdateItemParams struct {
-	ID          int64
-	ChrtID      int64
-	TrackNumber string
-	Price       int32
-	Rid         string
-	Name        string
-	Sale        int32
-	Size        string
-	TotalPrice  int32
-	NmID        int64
-	Brand       string
-	Status      int32
-}
-
-func (q *Queries) UpdateItem(ctx context.Context, arg UpdateItemParams) error {
-	_, err := q.db.Exec(ctx, updateItem,
-		arg.ID,
-		arg.ChrtID,
-		arg.TrackNumber,
-		arg.Price,
-		arg.Rid,
-		arg.Name,
-		arg.Sale,
-		arg.Size,
-		arg.TotalPrice,
-		arg.NmID,
-		arg.Brand,
-		arg.Status,
-	)
-	return err
-}
-
-const updateOrder = `-- name: UpdateOrder :exec
-UPDATE orders
-SET
-    track_number = $2,
-    entry = $3,
-    locale = $4,
-    internal_signature = $5,
-    customer_id = $6,
-    delivery_service = $7,
-    shardkey = $8,
-    sm_id = $9,
-    date_created = $10,
-    oof_shard = $11
-WHERE id = $1
-`
-
-type UpdateOrderParams struct {
-	ID                int64
-	TrackNumber       string
-	Entry             string
-	Locale            string
-	InternalSignature string
-	CustomerID        string
-	DeliveryService   string
-	Shardkey          string
-	SmID              int32
-	DateCreated       time.Time
-	OofShard          string
-}
-
-func (q *Queries) UpdateOrder(ctx context.Context, arg UpdateOrderParams) error {
-	_, err := q.db.Exec(ctx, updateOrder,
-		arg.ID,
-		arg.TrackNumber,
-		arg.Entry,
-		arg.Locale,
-		arg.InternalSignature,
-		arg.CustomerID,
-		arg.DeliveryService,
-		arg.Shardkey,
-		arg.SmID,
-		arg.DateCreated,
-		arg.OofShard,
-	)
-	return err
-}
-
-const updatePayment = `-- name: UpdatePayment :exec
-UPDATE payment
-SET
-    transaction = $2,
-    request_id = $3,
-    currency = $4,
-    provider = $5,
-    amount = $6,
-    payment_dt = $7,
-    bank = $8,
-    delivery_cost = $9,
-    goods_total = $10,
-    custom_fee = $11
-WHERE id = $1
-`
-
-type UpdatePaymentParams struct {
-	ID           int64
-	Transaction  string
-	RequestID    string
-	Currency     string
-	Provider     string
-	Amount       int32
-	PaymentDt    int64
-	Bank         string
-	DeliveryCost int32
-	GoodsTotal   int32
-	CustomFee    int32
-}
-
-func (q *Queries) UpdatePayment(ctx context.Context, arg UpdatePaymentParams) error {
-	_, err := q.db.Exec(ctx, updatePayment,
-		arg.ID,
-		arg.Transaction,
-		arg.RequestID,
-		arg.Currency,
-		arg.Provider,
-		arg.Amount,
-		arg.PaymentDt,
-		arg.Bank,
-		arg.DeliveryCost,
-		arg.GoodsTotal,
-		arg.CustomFee,
-	)
-	return err
 }

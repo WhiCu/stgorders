@@ -11,6 +11,7 @@ import (
 
 type service interface {
 	Serve(ctx context.Context, data []byte) error
+	Close() error
 }
 
 type Handler struct {
@@ -111,6 +112,11 @@ func (h *Handler) Shutdown(ctx context.Context) (err error) {
 	h.log.Debug("shutting down")
 	if err = h.Close(); err != nil {
 		h.log.Error("could not close consumer", slog.String("ERR", err.Error()))
+		return err
+	}
+
+	if err = h.service.Close(); err != nil {
+		h.log.Error("could not close service", slog.String("ERR", err.Error()))
 		return err
 	}
 	h.log.Debug("successfully shutting down")

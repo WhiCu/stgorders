@@ -15,6 +15,7 @@ create table orders (
 
 create table delivery (
     id bigint primary key generated always as identity,
+    order_id text not null references orders(order_uid) on delete cascade,
     name text not null,
     phone text not null,
     zip text not null,
@@ -26,7 +27,7 @@ create table delivery (
 
 create table payment (
     id bigint primary key generated always as identity,
-    transaction text not null references orders (order_uid),
+    transaction text not null references orders (order_uid) on delete cascade,
     request_id text not null,
     currency text not null,
     provider text not null,
@@ -41,7 +42,7 @@ create table payment (
 create table items (
     id bigint primary key generated always as identity,
     chrt_id bigint not null,
-    track_number text not null references orders (track_number),
+    track_number text not null references orders (track_number) on delete cascade,
     price int not null,
     rid text not null,
     name text not null,

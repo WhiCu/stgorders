@@ -3,11 +3,15 @@ package config
 import (
 	"net"
 	"strings"
+	"time"
 )
 
 type ServerConfig struct {
-	Host string `yaml:"host" env:"HOST" env-default:"localhost"`
-	Port string `yaml:"port" env:"PORT" env-default:"8080"`
+	Host         string        `yaml:"host" env:"HOST" env-default:"localhost"`
+	Port         string        `yaml:"port" env:"PORT" env-default:"8080"`
+	ReadTimeout  time.Duration `yaml:"read_timeout" env:"READ_TIMEOUT" env-default:"10s"`
+	WriteTimeout time.Duration `yaml:"write_timeout" env:"WRITE_TIMEOUT" env-default:"30s"`
+	IdleTimeout  time.Duration `yaml:"idle_timeout" env:"IDLE_TIMEOUT" env-default:"30s"`
 }
 
 type StorageConfig struct {
@@ -42,11 +46,16 @@ type KafkaConfig struct {
 	WorkerPool WorkerPoolConfig `yaml:"worker_pool"`
 }
 
+type CacheConfig struct {
+	Size int `yaml:"size" env:"CACHE_SIZE" env-default:"128"`
+}
+
 type Config struct {
 	Server  ServerConfig  `yaml:"server"`
 	Storage StorageConfig `yaml:"storage"`
 	Logger  LoggerConfig  `yaml:"logger"`
 	Kafka   KafkaConfig   `yaml:"kafka"`
+	Cache   CacheConfig   `yaml:"cache"`
 }
 
 func (srv *ServerConfig) ServerAddr() string {

@@ -5,9 +5,17 @@
 -- name: ListOrders :many
 SELECT * FROM orders;
 
--- name: GetOrderByID :one
-SELECT * FROM orders
-WHERE id = $1;
+-- name: GetOrderByUID :one
+SELECT *
+FROM orders
+WHERE order_uid = $1;
+
+-- name: GetLastOrders :many
+SELECT *
+FROM orders
+ORDER BY id DESC
+LIMIT $1;
+
 
 -- name: CreateOrder :one
 INSERT INTO orders (
@@ -27,25 +35,6 @@ INSERT INTO orders (
 )
 RETURNING id;
 
--- name: UpdateOrder :exec
-UPDATE orders
-SET
-    track_number = $2,
-    entry = $3,
-    locale = $4,
-    internal_signature = $5,
-    customer_id = $6,
-    delivery_service = $7,
-    shardkey = $8,
-    sm_id = $9,
-    date_created = $10,
-    oof_shard = $11
-WHERE id = $1;
-
--- name: DeleteOrder :exec
-DELETE FROM orders
-WHERE id = $1;
-
 -- =======================
 -- DELIVERY
 -- =======================
@@ -53,12 +42,14 @@ WHERE id = $1;
 -- name: ListDeliveries :many
 SELECT * FROM delivery;
 
--- name: GetDeliveryByID :one
-SELECT * FROM delivery
-WHERE id = $1;
+-- name: GetDeliveryByOrderUID :one
+SELECT *
+FROM delivery
+WHERE order_id = $1;
 
 -- name: CreateDelivery :one
 INSERT INTO delivery (
+    order_id,
     name,
     phone,
     zip,
@@ -67,25 +58,9 @@ INSERT INTO delivery (
     region,
     email
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
+    $1, $2, $3, $4, $5, $6, $7, $8
 )
 RETURNING id;
-
--- name: UpdateDelivery :exec
-UPDATE delivery
-SET
-    name = $2,
-    phone = $3,
-    zip = $4,
-    city = $5,
-    address = $6,
-    region = $7,
-    email = $8
-WHERE id = $1;
-
--- name: DeleteDelivery :exec
-DELETE FROM delivery
-WHERE id = $1;
 
 -- =======================
 -- PAYMENT
@@ -94,9 +69,11 @@ WHERE id = $1;
 -- name: ListPayments :many
 SELECT * FROM payment;
 
--- name: GetPaymentByID :one
-SELECT * FROM payment
-WHERE id = $1;
+-- name: GetPaymentByTransaction :one
+SELECT *
+FROM payment
+WHERE transaction = $1;
+
 
 -- name: CreatePayment :one
 INSERT INTO payment (
@@ -115,25 +92,6 @@ INSERT INTO payment (
 )
 RETURNING id;
 
--- name: UpdatePayment :exec
-UPDATE payment
-SET
-    transaction = $2,
-    request_id = $3,
-    currency = $4,
-    provider = $5,
-    amount = $6,
-    payment_dt = $7,
-    bank = $8,
-    delivery_cost = $9,
-    goods_total = $10,
-    custom_fee = $11
-WHERE id = $1;
-
--- name: DeletePayment :exec
-DELETE FROM payment
-WHERE id = $1;
-
 -- =======================
 -- ITEMS
 -- =======================
@@ -141,9 +99,10 @@ WHERE id = $1;
 -- name: ListItems :many
 SELECT * FROM items;
 
--- name: GetItemByID :one
-SELECT * FROM items
-WHERE id = $1;
+-- name: GetItemsByTrackNumber :many
+SELECT *
+FROM items
+WHERE track_number = $1;
 
 -- name: CreateItem :one
 INSERT INTO items (
@@ -162,23 +121,3 @@ INSERT INTO items (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
 )
 RETURNING id;
-
--- name: UpdateItem :exec
-UPDATE items
-SET
-    chrt_id = $2,
-    track_number = $3,
-    price = $4,
-    rid = $5,
-    name = $6,
-    sale = $7,
-    size = $8,
-    total_price = $9,
-    nm_id = $10,
-    brand = $11,
-    status = $12
-WHERE id = $1;
-
--- name: DeleteItem :exec
-DELETE FROM items
-WHERE id = $1;
