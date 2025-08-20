@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/WhiCu/stgorders/internal/app"
 	"github.com/WhiCu/stgorders/internal/config"
@@ -16,7 +17,14 @@ func main() {
 	ctx := context.Background()
 
 	if err := app.Run(ctx); err != nil {
-		panic(err)
+		log.Fatalf(`
+	==================================
+	=                                =
+	=    Server failed to start     =
+	=                                =
+	==================================
+%v
+		`, err)
 	}
 	fmt.Println(`
 	==================================

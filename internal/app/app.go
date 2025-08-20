@@ -18,6 +18,7 @@ import (
 	wi "github.com/WhiCu/stgorders/internal/web-interface"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -30,34 +31,33 @@ type consumer interface {
 }
 
 type App struct {
-	csm  consumer
-	srv  *http.Server
-	done chan error
+	csm consumer
+	srv *http.Server
 
 	cfg *config.Config
 	log *slog.Logger
 }
 
-func (a *App) gracefulShutdown(ctx context.Context, cancelParent context.CancelFunc) {
+func (a *App) gracefulShutdown(ctx context.Context, cancelParent context.CancelFunc) error {
 	ctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	<-ctx.Done()
-	cancelParent()
 	a.log.Info("shutting down gracefully, press Ctrl+C again to force")
 	stop()
+	cancelParent()
 
 	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
+
 	if err := a.Shutdown(ctx); err != nil {
 		a.log.Error("Server forced to shutdown with error", slog.String("ERR", err.Error()))
-		a.done <- err
-		return
+		return err
 	}
 
 	a.log.Info("Server successfully shutdown")
 
-	a.done <- nil
+	return nil
 }
 
 func (a *App) Shutdown(ctx context.Context) (err error) {
@@ -91,6 +91,10 @@ func NewApp(cfg *config.Config) *App {
 	if err != nil {
 		panic(err)
 	}
+	if err = p.Ping(context.Background()); err != nil {
+		panic(err)
+	}
+
 	stg := storage.NewStorage(p, log.WithGroup("storage"))
 
 	// Create cache
@@ -119,11 +123,10 @@ func NewApp(cfg *config.Config) *App {
 	}
 
 	return &App{
-		csm:  csm,
-		srv:  &srv,
-		done: make(chan error),
-		cfg:  cfg,
-		log:  log,
+		csm: csm,
+		srv: &srv,
+		cfg: cfg,
+		log: log,
 	}
 }
 
@@ -131,29 +134,31 @@ func (a *App) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	// graceful shutdown слушает сигналы и инициирует остановку
-	go a.gracefulShutdown(ctx, cancel)
+	eg, ctx := errgroup.WithContext(ctx)
 
-	// запускаем HTTP сервер
-	go func() {
+	eg.Go(func() error {
 		a.log.Info("starting http server", slog.String("addr", a.srv.Addr))
 		if err := a.srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			a.log.Error("http server failed", slog.String("ERR", err.Error()))
-			a.done <- err
+			return err
 		}
-	}()
+		return nil
+	})
 
-	// запускаем kafka consumer
-	go func() {
-		a.log.Info("starting kafka consumer")
-		if err := a.csm.ListenAndServe(ctx); err != nil {
+	eg.Go(func() error {
+		a.log.Info("starting kafka consumer", slog.String("brokers", strings.Join(a.cfg.Kafka.Brokers, ", ")))
+		if err := a.csm.ListenAndServe(ctx); err != nil && !errors.Is(err, context.Canceled) {
 			a.log.Error("kafka consumer failed", slog.String("ERR", err.Error()))
-			a.done <- err
+			return err
 		}
-	}()
+		return nil
+	})
 
-	// ждём либо ошибку, либо завершение gracefulShutdown
-	return <-a.done
+	eg.Go(func() error {
+		return a.gracefulShutdown(ctx, cancel)
+	})
+
+	return eg.Wait()
 }
 
 // func (a *App) Run(ctx context.Context) error {

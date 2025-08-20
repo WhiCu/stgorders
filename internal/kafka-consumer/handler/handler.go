@@ -2,6 +2,8 @@ package handler
 
 import (
 	"context"
+	"errors"
+	"io"
 	"log/slog"
 	"strings"
 
@@ -88,6 +90,10 @@ func (h *Handler) ListenAndServe(ctx context.Context) (err error) {
 				if ctx.Err() != nil {
 					h.log.Debug("context canceled", slog.String("ERR", err.Error()))
 					return nil
+				}
+				if errors.Is(err, io.EOF) {
+					h.log.Warn("broker closed connection", slog.String("ERR", err.Error()))
+					continue
 				}
 				h.log.Error("could not fetch message", slog.String("ERR", err.Error()))
 				return err
