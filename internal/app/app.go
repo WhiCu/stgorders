@@ -98,6 +98,7 @@ func NewApp(cfg *config.Config) *App {
 	stg := storage.NewStorage(p, log.WithGroup("storage"))
 
 	// Create cache
+	log.Info("cache created", slog.Int("size", cfg.Cache.Size))
 	cache := cache.NewLRUCache[string, model.JsonOrder](cfg.Cache.Size, log.WithGroup("cache"))
 	err = stg.InitCache(context.Background(), cache)
 	if err != nil {
@@ -105,6 +106,7 @@ func NewApp(cfg *config.Config) *App {
 	}
 
 	// Create kafka consumer
+
 	csm := kc.NewKafkaConsumer(log.WithGroup("kafka-consumer"), cfg.Kafka, stg, cache)
 	log.Info("handler created",
 		slog.String("brokers", strings.Join(cfg.Kafka.Brokers, ", ")),
@@ -113,7 +115,7 @@ func NewApp(cfg *config.Config) *App {
 	)
 
 	// Create server
-	gin.SetMode(gin.ReleaseMode)
+	// gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 	router.Use(gin.Recovery())
 	wi.RegisterRoutes(router.Group("order"), log.WithGroup("web-interface"), stg, cache)

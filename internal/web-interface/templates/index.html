@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Order Lookup</title>
+</head>
+<body>
+    <h2>Поиск заказа</h2>
+    <input type="text" id="orderId" placeholder="Введите Order ID">
+    <button onclick="getOrder()">Найти</button>
+    <p><b>Время отклика:</b> <span id="time"></span></p>
+    <pre id="result"></pre>
+
+    <script>
+        async function getOrder() {
+            let id = document.getElementById("orderId").value;
+            if (!id) {
+                alert("Введите ID заказа");
+                return;
+            }
+            try {
+                let start = performance.now(); // начало замера
+                let res = await fetch("/order/" + id);
+                let end = performance.now();   // конец замера
+                let duration = (end - start).toFixed(2); // время в мс
+
+                document.getElementById("time").textContent = duration + " ms";
+
+                if (!res.ok) {
+                    document.getElementById("result").textContent = "Ошибка: " + res.status;
+                    return;
+                }
+
+                let data = await res.json();
+                document.getElementById("result").textContent = JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById("time").textContent = "-";
+                document.getElementById("result").textContent = "Ошибка: " + e;
+            }
+        }
+    </script>
+</body>
+</html>

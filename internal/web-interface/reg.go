@@ -16,5 +16,6 @@ func RegisterRoutes(r *gin.RouterGroup, log *slog.Logger, storage *storage.Stora
 	stg := client.NewStorage(storage, cache, log.WithGroup("storageAdapter"))
 	srv := service.NewService(stg, log.WithGroup("service"))
 	h := handler.NewHandler(srv, log.WithGroup("handler"))
-	r.GET("/:orderUID", h.Order)
+	r.GET(":orderUID", h.Order)
+	r.GET("", h.Inter)
 }

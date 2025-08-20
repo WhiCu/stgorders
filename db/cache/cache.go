@@ -13,6 +13,9 @@ type LRUCache[K comparable, V any] struct {
 }
 
 func NewLRUCache[K comparable, V any](size int, log *slog.Logger) *LRUCache[K, V] {
+	if size <= 3 {
+		panic("invalid size")
+	}
 	lru, err := lru.New2Q[K, V](size)
 	if err != nil {
 		panic(err)

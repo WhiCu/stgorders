@@ -34,7 +34,7 @@ func (s *StorageAdapter) GetJsonOrderByUID(ctx context.Context, orderUID string)
 
 	order, err := s.GetOrderByUID(ctx, orderUID)
 	if err != nil {
-		s.log.Error("could not get order", slog.String("ERR", err.Error()))
+		log.Error("could not get order", slog.String("ERR", err.Error()))
 		return nil, err
 	}
 	delivery, err := s.GetDeliveryByOrderUID(ctx, order.OrderUid)
@@ -54,6 +54,11 @@ func (s *StorageAdapter) GetJsonOrderByUID(ctx context.Context, orderUID string)
 	}
 
 	jo := model.ModelJSONOrder(order, delivery, payment, items)
+
+	if err = s.cache.Set(orderUID, jo); err != nil {
+		log.Error("could not set order in cache", slog.String("ERR", err.Error()))
+		return nil, err
+	}
 
 	return &jo, nil
 }
