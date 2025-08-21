@@ -12,7 +12,7 @@ import (
 	"github.com/WhiCu/stgorders/internal/kafka-consumer/service"
 )
 
-func NewKafkaConsumer(log *slog.Logger, cfg config.KafkaConfig, storage *storage.Storage, cache *cache.LRUCache[string, model.JsonOrder]) *handler.Handler {
+func NewKafkaConsumer(log *slog.Logger, cfg config.KafkaConfig, storage *storage.Storage, cache cache.Cache[string, model.JsonOrder]) *handler.Handler {
 	stg := client.NewStorage(storage, cache, log.WithGroup("storageAdapter"))
 	srv := service.NewService(stg, log.WithGroup("service"))
 	return handler.NewHandler(

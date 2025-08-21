@@ -11,11 +11,11 @@ import (
 
 type StorageAdapter struct {
 	*storage.Storage
-	cache *cache.LRUCache[string, model.JsonOrder]
+	cache cache.Cache[string, model.JsonOrder]
 	log   *slog.Logger
 }
 
-func NewStorage(storage *storage.Storage, cache *cache.LRUCache[string, model.JsonOrder], log *slog.Logger) *StorageAdapter {
+func NewStorage(storage *storage.Storage, cache cache.Cache[string, model.JsonOrder], log *slog.Logger) *StorageAdapter {
 	log.Debug("creating storage adapter")
 	return &StorageAdapter{
 		Storage: storage,
@@ -57,7 +57,6 @@ func (s *StorageAdapter) GetJsonOrderByUID(ctx context.Context, orderUID string)
 
 	if err = s.cache.Set(orderUID, jo); err != nil {
 		log.Error("could not set order in cache", slog.String("ERR", err.Error()))
-		return nil, err
 	}
 
 	return &jo, nil

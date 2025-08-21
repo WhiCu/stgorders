@@ -1,16 +1,9 @@
 package main
 
 import (
-	"context"
-	"log/slog"
+	"fmt"
 
-	"github.com/WhiCu/stgorders/db/cache"
-	"github.com/WhiCu/stgorders/db/model"
-	"github.com/WhiCu/stgorders/db/storage"
 	"github.com/WhiCu/stgorders/internal/config"
-	"github.com/WhiCu/stgorders/internal/web-interface/client"
-	"github.com/WhiCu/stgorders/pkg/logger"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var data = `{
@@ -65,29 +58,30 @@ var data = `{
 
 func main() {
 	cfg := config.MustLoadWithDefault("./config/config.yaml")
+	fmt.Println("cfg: ", cfg.Cache)
 	// // var jo model.JsonOrder
 	// // if err := json.Unmarshal([]byte(data), jo); err != nil {
 	// // 	log.Fatal(err)
 	// // }
 
-	log := slog.New(logger.MustInitLogger("debug"))
-	c := cache.NewLRUCache[string, model.JsonOrder](cfg.Cache.Size, log.WithGroup("cache"))
-	p, err := pgxpool.New(context.Background(), cfg.Storage.DSN())
-	if err != nil {
-		panic(err)
-	}
-	stg := storage.NewStorage(p, log.WithGroup("storage"))
-	err = stg.InitCache(context.Background(), c)
-	if err != nil {
-		log.Error("could not init cache", slog.String("ERR", err.Error()))
-	}
-
-	// jsonOrder, err := client.NewStorage(stg, c, log).GetJsonOrderByUID(context.Background(), "b563feb7b2b84b6test9")
+	// log := slog.New(logger.MustInitLogger("debug"))
+	// c := cache.NewLRUCache[string, model.JsonOrder](cfg.Cache.Size, log.WithGroup("cache"))
+	// p, err := pgxpool.New(context.Background(), cfg.Storage.DSN())
 	// if err != nil {
-	// 	log.Error("could not get order", slog.String("ERR", err.Error()))
+	// 	panic(err)
 	// }
-	// fmt.Println("jo", jsonOrder)
-	s := client.NewStorage(stg, c, log.WithGroup("storageAdapter").With("orderUID", "b563feb7b2b84b6test9"))
-	s.GetJsonOrderByUID(context.Background(), "b563feb7b2b84b6test9")
-	s.Close()
+	// stg := storage.NewStorage(p, log.WithGroup("storage"))
+	// err = stg.InitCache(context.Background(), c)
+	// if err != nil {
+	// 	log.Error("could not init cache", slog.String("ERR", err.Error()))
+	// }
+
+	// // jsonOrder, err := client.NewStorage(stg, c, log).GetJsonOrderByUID(context.Background(), "b563feb7b2b84b6test9")
+	// // if err != nil {
+	// // 	log.Error("could not get order", slog.String("ERR", err.Error()))
+	// // }
+	// // fmt.Println("jo", jsonOrder)
+	// s := client.NewStorage(stg, c, log.WithGroup("storageAdapter").With("orderUID", "b563feb7b2b84b6test9"))
+	// s.GetJsonOrderByUID(context.Background(), "b563feb7b2b84b6test9")
+	// s.Close()
 }

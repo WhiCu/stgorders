@@ -99,15 +99,20 @@ func NewApp(cfg *config.Config) *App {
 
 	// Create cache
 	log.Info("cache created", slog.Int("size", cfg.Cache.Size))
-	cache := cache.NewLRUCache[string, model.JsonOrder](cfg.Cache.Size, log.WithGroup("cache"))
-	err = stg.InitCache(context.Background(), cache)
+	var c cache.Cache[string, model.JsonOrder]
+	c = cache.NewNOPCache[string](model.JsonOrder{})
+	if cfg.Cache.Size != 0 {
+		log.Info("LRU cache created", slog.Int("size", cfg.Cache.Size))
+		c = cache.NewLRUCache[string, model.JsonOrder](cfg.Cache.Size, log.WithGroup("cache"))
+	}
+
+	err = stg.InitCache(context.Background(), c)
 	if err != nil {
 		panic(err)
 	}
 
 	// Create kafka consumer
-
-	csm := kc.NewKafkaConsumer(log.WithGroup("kafka-consumer"), cfg.Kafka, stg, cache)
+	csm := kc.NewKafkaConsumer(log.WithGroup("kafka-consumer"), cfg.Kafka, stg, c)
 	log.Info("handler created",
 		slog.String("brokers", strings.Join(cfg.Kafka.Brokers, ", ")),
 		slog.String("group_id", cfg.Kafka.GroupID),
@@ -115,10 +120,10 @@ func NewApp(cfg *config.Config) *App {
 	)
 
 	// Create server
-	// gin.SetMode(gin.ReleaseMode)
+	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 	router.Use(gin.Recovery())
-	wi.RegisterRoutes(router.Group("order"), log.WithGroup("web-interface"), stg, cache)
+	wi.RegisterRoutes(router.Group("order"), log.WithGroup("web-interface"), stg, c)
 	srv := http.Server{
 		Addr:    cfg.Server.ServerAddr(),
 		Handler: router,

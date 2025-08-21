@@ -47,7 +47,7 @@ type KafkaConfig struct {
 }
 
 type CacheConfig struct {
-	Size int `yaml:"size" env:"CACHE_SIZE" env-default:"128"`
+	Size int `yaml:"size" env:"CACHE_SIZE"`
 }
 
 type Config struct {

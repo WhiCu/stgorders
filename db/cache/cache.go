@@ -6,9 +6,15 @@ import (
 	lru "github.com/hashicorp/golang-lru/v2"
 )
 
+type Cache[K comparable, V any] interface {
+	Get(key K) (V, error)
+	Set(key K, value V) error
+	Size() int
+}
+
 type LRUCache[K comparable, V any] struct {
 	lru  *lru.TwoQueueCache[K, V]
-	Size int
+	size int
 	log  *slog.Logger
 }
 
@@ -22,7 +28,7 @@ func NewLRUCache[K comparable, V any](size int, log *slog.Logger) *LRUCache[K, V
 	}
 	return &LRUCache[K, V]{
 		lru:  lru,
-		Size: size,
+		size: size,
 		log:  log,
 	}
 }
@@ -52,4 +58,8 @@ func (c *LRUCache[K, V]) Map() map[K]V {
 		m[k] = v
 	}
 	return m
+}
+
+func (c *LRUCache[K, V]) Size() int {
+	return c.size
 }

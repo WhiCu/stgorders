@@ -29,4 +29,4 @@ storage:
   db: "l0_test"
 
 cache:
-  size: 4
+  size: 128

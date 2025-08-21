@@ -19,15 +19,15 @@
                 return;
             }
             try {
-                let start = performance.now(); // начало замера
+                let start = performance.now();
                 let res = await fetch("/order/" + id);
-                let end = performance.now();   // конец замера
-                let duration = (end - start).toFixed(2); // время в мс
+                let end = performance.now();
+                let duration = (end - start).toFixed(2); 
 
                 document.getElementById("time").textContent = duration + " ms";
 
                 if (!res.ok) {
-                    document.getElementById("result").textContent = "Ошибка: " + res.status;
+                    document.getElementById("result").textContent = "Ошибка: " + res.status + " " + res.statusText + "\n" + await res.text();
                     return;
                 }
 

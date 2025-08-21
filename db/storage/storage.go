@@ -39,14 +39,14 @@ func (s *Storage) Close() {
 	s.log.Debug("closing connection", slog.String("CONN", s.conn.Config().ConnConfig.Database))
 }
 
-func (s *Storage) InitCache(ctx context.Context, cache *cache.LRUCache[string, model.JsonOrder]) (err error) {
+func (s *Storage) InitCache(ctx context.Context, cache cache.Cache[string, model.JsonOrder]) (err error) {
 	defer func() {
 		if err != nil {
 			err = WrapErrPreloadCache(err)
 		}
 	}()
 	log := s.log.WithGroup("init_cache")
-	orders, err := s.GetLastOrders(ctx, int32(cache.Size))
+	orders, err := s.GetLastOrders(ctx, int32(cache.Size()))
 	if err != nil {
 		log.Error("could not get last orders", slog.String("ERR", err.Error()))
 		return err
@@ -74,6 +74,6 @@ func (s *Storage) InitCache(ctx context.Context, cache *cache.LRUCache[string, m
 		cache.Set(o.OrderUid, jsonOrder)
 	}
 
-	log.Info("cache preloaded", slog.Int("count", cache.Size))
+	log.Info("cache preloaded", slog.Int("count", cache.Size()))
 	return nil
 }
