@@ -27,3 +27,7 @@ func (m NOPHandler) WithGroup(_ string) slog.Handler {
 func NewNOPHandler() NOPHandler {
 	return NOPHandler{}
 }
+
+func NewNOPSlog() *slog.Logger {
+	return slog.New(NewNOPHandler())
+}

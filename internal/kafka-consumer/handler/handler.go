@@ -16,12 +16,23 @@ type service interface {
 	Close() error
 }
 
+type consumer interface {
+	FetchMessage(ctx context.Context) (kafka.Message, error)
+	CommitMessages(ctx context.Context, messages ...kafka.Message) error
+	Close() error
+}
+
+type workerPool interface {
+	Serve(m *kafka.Message) bool
+	StopAndWaitContext(ctx context.Context) error
+}
+
 type Handler struct {
 	// main consumer
-	consumer *kafka.Reader
+	consumer consumer
 
 	// worker
-	workerPool *worker.WorkerPool[*kafka.Message]
+	workerPool workerPool
 
 	// service
 	service service
@@ -42,20 +53,20 @@ type ConsumerConfig struct {
 }
 
 func NewHandler(log *slog.Logger, cfg ConsumerConfig, s service) *Handler {
-	kafkacfg := kafka.ReaderConfig{
+	kcfg := kafka.ReaderConfig{
 		Brokers: cfg.Brokers,
 		GroupID: cfg.GroupID,
 		Topic:   cfg.Topic,
 	}
-	log.Debug("kafka reader config", slog.String("brokers", strings.Join(kafkacfg.Brokers, ", ")), slog.String("group_id", kafkacfg.GroupID), slog.String("topic", kafkacfg.Topic))
+	log.Debug("kafka reader config", slog.String("brokers", strings.Join(kcfg.Brokers, ", ")), slog.String("group_id", kcfg.GroupID), slog.String("topic", kcfg.Topic))
 	c := kafka.NewReader(
-		kafkacfg,
+		kcfg,
 	)
 
 	wp := worker.NewWorkerPool(
 		cfg.WorkerPoolSize,
 		func(m *kafka.Message) (err error) {
-			log.Debug("message processed", slog.String("topic", m.Topic), slog.Time("partition", m.Time))
+			log.Debug("message processed", slog.String("topic", m.Topic), slog.Int64("offset", m.Offset))
 			if err = s.Serve(context.Background(), m.Value); err != nil {
 				log.Error("could not serve message", slog.String("ERR", err.Error()))
 				return err
@@ -69,9 +80,14 @@ func NewHandler(log *slog.Logger, cfg ConsumerConfig, s service) *Handler {
 		cfg.WorkerPoolBuf,
 		log.WithGroup("worker-pool"),
 	)
+	h := newHandler(log, c, s, wp)
+	return h
+}
+
+func newHandler(log *slog.Logger, consumer consumer, s service, wp workerPool) *Handler {
 
 	return &Handler{
-		consumer:   c,
+		consumer:   consumer,
 		workerPool: wp,
 		log:        log,
 		service:    s,
@@ -87,7 +103,7 @@ func (h *Handler) ListenAndServe(ctx context.Context) (err error) {
 			h.log.Debug("fetching message")
 			m, err := h.consumer.FetchMessage(ctx)
 			if err != nil {
-				if ctx.Err() != nil {
+				if ctx.Err() != nil || errors.Is(err, context.Canceled) {
 					h.log.Debug("context canceled", slog.String("ERR", err.Error()))
 					return nil
 				}

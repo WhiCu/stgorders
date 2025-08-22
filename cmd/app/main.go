@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	cfg := config.MustLoadWithDefault("./config/config.yaml")
+	cfg := config.MustLoadWithEnv()
 
 	app := app.NewApp(cfg)
 

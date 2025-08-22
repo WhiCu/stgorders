@@ -25,11 +25,6 @@ func NewStorage(storage *storage.Storage, cache cache.Cache[string, model.JsonOr
 	}
 }
 
-// func (s *StorageAdapter) WithTx(ctx context.Context) (storage service.Storage, rollback service.Event, commit service.Event, err error) {
-// 	stg, rb, cmt, err := s.Storage.WithTx(ctx)
-// 	return &StorageAdapter{stg, s.log}, service.Event(rb), service.Event(cmt), err
-// }
-
 func (s *StorageAdapter) Save(ctx context.Context, order model.JsonOrder) (err error) {
 
 	storage, rollback, commit, err := s.WithTx(ctx)

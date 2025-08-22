@@ -1,7 +1,11 @@
 package handler
 
-import "github.com/gin-gonic/gin"
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
 
 func (h *Handler) Ping(c *gin.Context) {
-	c.String(200, "pong")
+	c.String(http.StatusOK, "pong")
 }

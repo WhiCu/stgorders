@@ -45,7 +45,7 @@ type Payment struct {
 	Amount       int32  `json:"amount" validate:"required"`
 	PaymentDt    int64  `json:"payment_dt" validate:"required"`
 	Bank         string `json:"bank" validate:"required"`
-	DeliveryCost int32  `json:"delivery_cost" validate:"required"`
+	DeliveryCost int32  `json:"delivery_cost" validate:"omitempty,gte=0"`
 	GoodsTotal   int32  `json:"goods_total" validate:"required"`
 	CustomFee    int32  `json:"custom_fee" validate:"omitempty"`
 }
@@ -56,7 +56,7 @@ type Item struct {
 	Price       int32  `json:"price" validate:"required"`
 	Rid         string `json:"rid" validate:"required"`
 	Name        string `json:"name" validate:"required"`
-	Sale        int32  `json:"sale" validate:"required,gte=0,lte=100"`
+	Sale        int32  `json:"sale" validate:"omitempty,gte=0,lte=100"`
 	Size        string `json:"size" validate:"required"`
 	TotalPrice  int32  `json:"total_price" validate:"required,gte=0"`
 	NmID        int64  `json:"nm_id" validate:"required"`

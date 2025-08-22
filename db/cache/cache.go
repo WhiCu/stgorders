@@ -6,6 +6,10 @@ import (
 	lru "github.com/hashicorp/golang-lru/v2"
 )
 
+const (
+	MinSize = 2
+)
+
 type Cache[K comparable, V any] interface {
 	Get(key K) (V, error)
 	Set(key K, value V) error
@@ -18,19 +22,16 @@ type LRUCache[K comparable, V any] struct {
 	log  *slog.Logger
 }
 
-func NewLRUCache[K comparable, V any](size int, log *slog.Logger) *LRUCache[K, V] {
-	if size <= 3 {
-		panic("invalid size")
-	}
+func NewLRUCache[K comparable, V any](size int, log *slog.Logger) (*LRUCache[K, V], error) {
 	lru, err := lru.New2Q[K, V](size)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	return &LRUCache[K, V]{
 		lru:  lru,
 		size: size,
 		log:  log,
-	}
+	}, nil
 }
 
 func (c *LRUCache[K, V]) Get(key K) (V, error) {
@@ -51,10 +52,7 @@ func (c *LRUCache[K, V]) Set(key K, value V) error {
 func (c *LRUCache[K, V]) Map() map[K]V {
 	m := make(map[K]V, c.lru.Len())
 	for _, k := range c.lru.Keys() {
-		v, ok := c.lru.Get(k)
-		if !ok {
-			continue
-		}
+		v, _ := c.lru.Get(k)
 		m[k] = v
 	}
 	return m

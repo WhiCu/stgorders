@@ -87,6 +87,7 @@ func NewApp(cfg *config.Config) *App {
 	)
 
 	// Create storage
+	log.Info("storage created", slog.String("dsn", cfg.Storage.DSN()))
 	p, err := pgxpool.New(context.Background(), cfg.Storage.DSN())
 	if err != nil {
 		panic(err)
@@ -103,7 +104,10 @@ func NewApp(cfg *config.Config) *App {
 	c = cache.NewNOPCache[string](model.JsonOrder{})
 	if cfg.Cache.Size != 0 {
 		log.Info("LRU cache created", slog.Int("size", cfg.Cache.Size))
-		c = cache.NewLRUCache[string, model.JsonOrder](cfg.Cache.Size, log.WithGroup("cache"))
+		c, err = cache.NewLRUCache[string, model.JsonOrder](cfg.Cache.Size, log.WithGroup("cache"))
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	err = stg.InitCache(context.Background(), c)
