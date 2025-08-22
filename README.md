@@ -1,6 +1,9 @@
 # Consumer Service
 
-Сервис для обработки сообщений из Kafka с веб-интерфейсом и сохранением данных в PostgreSQL.
+[![Go Version](https://img.shields.io/badge/Go-1.24.3+-blue.svg)](https://golang.org)
+[![Go Report Card](https://goreportcard.com/badge/github.com/WhiCu/stgorders)](https://goreportcard.com/report/github.com/WhiCu/stgorders)
+
+Сервис для обработки сообщений из Kafka с веб-интерфейсом и сохранением данных в PostgreSQL и кэше.
 
 ## Архитектура
 
@@ -175,37 +178,11 @@ docker-compose up -d
 - **Consumer**: многоэтапная сборка через Dockerfile, автоматические зависимости
 
 **Особенности Dockerfile:**
-- Многоэтапная сборка: `golang:1.25-alpine` → `distroless/static-debian12`
+- Многоэтапная сборка: `golang:1.25-alpine` → `alpine:3.22.0`
 - Статическая компиляция с `CGO_ENABLED=0`
 - Минимальный размер образа (без shell, пакетного менеджера)
-- Non-root пользователь для безопасности
 
-#### 🖥️ Локальный запуск
-
-```bash
-# Запуск только PostgreSQL
-docker-compose up -d db
-
-# Ожидание готовности БД
-sleep 10
-
-# Проверка статуса
-docker-compose ps
-```
-
-### Сборка приложения
-
-#### 🐳 Docker сборка
-
-```bash
-# Сборка образа
-docker build -t consumer-service .
-
-# Запуск контейнера
-docker run -p 8080:8080 consumer-service
-```
-
-#### 🖥️ Локальная сборка
+#### Локальная сборка
 
 ```bash
 # Сборка
@@ -217,17 +194,7 @@ task build
 
 ### Запуск приложения
 
-#### 🐳 Docker
-
-```bash
-# Запуск через docker-compose (все сервисы)
-docker-compose up
-
-# Запуск только приложения (требует запущенную БД и Kafka)
-docker-compose up consumer
-```
-
-#### 🖥️ Локально
+#### Локально
 
 ```bash
 # Запуск собранного бинарника
@@ -242,9 +209,9 @@ task run
 
 ### Тестирование
 
-#### 🧪 GoConvey Framework
+#### GoConvey 
 
-Проект использует **GoConvey** - мощный фреймворк для тестирования в стиле BDD (Behavior Driven Development).
+Проект использует **GoConvey**
 
 #### Запуск тестов
 
@@ -255,235 +222,22 @@ go test ./... -v -cover
 # Через Task
 task test
 
-# 🎯 GoConvey веб-интерфейс (рекомендуется для разработки)
+# GoConvey веб-интерфейс
 goconvey
-
-# GoConvey с параметрами
-goconvey -host=0.0.0.0 -port=8081 -workDir=.
-```
-
-#### 🎯 GoConvey особенности
-
-- **Веб-интерфейс**: автоматически открывает браузер с результатами тестов
-- **BDD синтаксис**: `Convey("Given...", func() { ... })`
-- **Автоматический перезапуск**: тесты перезапускаются при изменении кода
-- **Покрытие кода**: показывает покрытие в реальном времени
-- **Детальные отчеты**: полная информация о прохождении тестов
-
-#### 📁 Структура тестов
-
-```go
-func TestHandler_ListenAndServe(t *testing.T) {
-    Convey("Given a serviceable worker pool", t, func() {
-        Convey("When context is cancelled immediately", func() {
-            // ... setup code ...
-            
-            Convey("Then ListenAndServe should return nil without error", func() {
-                err := h.ListenAndServe(ctx)
-                So(err, ShouldBeNil)
-            })
-        })
-    })
-}
-```
-
-#### 🔍 Отдельные тесты
-
-```bash
-# Тесты конкретного пакета
-go test ./internal/kafka-consumer/handler/... -v
-
-# Тесты с покрытием
-go test ./internal/kafka-consumer/handler/... -coverprofile=coverage.out
-
-# Просмотр покрытия
-go tool cover -html=coverage.out
-```
-
-## 🐳 Docker Compose
-
-Файл `docker-compose.yml` содержит:
-
-- **PostgreSQL 16** - основная база данных
-  - Порт: 5432
-  - Пользователь: user
-  - Пароль: password
-  - База: l0_test
-  - Инициализация через `init.sql`
-  - Health check для проверки готовности
-
-- **Kafka** - брокер сообщений
-  - Порт: 9092 (внешний), 29092 (внутренний)
-  - KRaft режим (без Zookeeper)
-  - Автоматическое создание топиков
-  - Health check для проверки готовности
-
-- **Consumer** - основное приложение
-  - Собирается из Dockerfile
-  - Порт: 8080
-  - Зависит от готовности БД и Kafka
-  - Использует переменные окружения для конфигурации
-
-## 🐳 Dockerfile
-
-Проект использует многоэтапную сборку для создания минимального образа:
-
-### Этапы сборки
-
-1. **Builder** (`golang:1.25-alpine`)
-   - Установка зависимостей Go
-   - Компиляция статического бинарного файла
-   - Оптимизация размера через `-trimpath -ldflags "-s -w"`
-
-2. **Runtime** (`gcr.io/distroless/static-debian12`)
-   - Минимальный образ без shell и пакетного менеджера
-   - Только необходимые системные библиотеки
-   - Безопасность через non-root пользователя
-
-### Особенности
-
-- **Статическая компиляция**: `CGO_ENABLED=0` для переносимости
-- **Минимальный размер**: использование distroless образа
-- **Безопасность**: non-root пользователь по умолчанию
-- **Оптимизация**: удаление отладочной информации из бинарного файла
-
-### Переменные окружения для Docker
-
-```bash
-# Основные настройки
-DB_HOST=db                    # Хост PostgreSQL
-KAFKA_BROKERS=kafka:29092    # Внутренний адрес Kafka
-LOG_LEVEL=debug              # Уровень логирования
-
-# Путь к конфигурации
-PATH_CONFIG=/src/config/config.yaml
-```
-
-### Запуск всех сервисов
-
-```bash
-# Сборка и запуск
-docker-compose up --build
-
-# Запуск в фоновом режиме
-docker-compose up -d --build
-```
-
-### Запуск только базы данных
-
-```bash
-docker-compose up -d db
-```
-
-### Остановка
-
-```bash
-# Остановка всех сервисов
-docker-compose down
-
-# Остановка с удалением volumes
-docker-compose down -v
-```
-
-### Просмотр логов
-
-```bash
-# Логи всех сервисов
-docker-compose logs -f
-
-# Логи конкретного сервиса
-docker-compose logs -f consumer
-docker-compose logs -f db
-docker-compose logs -f kafka
-```
-
-## 📊 База данных
-
-### Миграции
-
-Миграции находятся в папке `db/migrations/`:
-- `000001_create_users_table.up.sql` - создание таблицы пользователей
-- `000001_create_users_table.down.sql` - откат изменений
-
-### Схема
-
-Основная схема БД описана в `db/schema.sql`
-
-### SQLC
-
-Проект использует SQLC для генерации Go кода из SQL запросов:
-- Конфигурация: `db/sqlc.yaml`
-- Запросы: `db/query.sql`
-- Сгенерированный код: `db/pg/query.sql.go`
-
-## 🔧 Разработка
-
-### Hot Reload
-
-Для разработки с автоматической перезагрузкой:
-
-```bash
-# Установка Air
-go install github.com/cosmtrek/air@latest
-
-# Запуск
-air
-
-# Или через Task
-task air
 ```
 
 ### Логирование
 
-Логи сохраняются в папку `logs/` с ротацией файлов.
+Логи сохраняются в папку `logs/` с ротацией файлов (LOGGER_PATH != "").
 
 ### Переменные окружения
 
 Поддерживается загрузка переменных из `.env` файла.
 
-## 📝 API Endpoints
+## API Endpoints
 
 Веб-интерфейс предоставляет следующие эндпоинты:
 
 - `GET /ping` - проверка работоспособности
 - `GET /` - главная страница
-- Другие эндпоинты для работы с заказами
-
-## 🧪 Тестирование
-
-Проект содержит тесты для всех основных компонентов:
-- Unit тесты для сервисов
-- Интеграционные тесты для обработчиков
-- Тесты для кэша и хранилища
-
-## 📋 Taskfile
-
-Проект использует Task для автоматизации:
-
-- `task test` - запуск тестов
-- `task build` - сборка приложения
-- `task run` - запуск приложения
-- `task air` - запуск с hot reload
-- `task up` - запуск миграций
-
-## 🔍 Мониторинг
-
-- Логирование в файлы с ротацией
-- Метрики производительности
-- Health check эндпоинты
-
-## 🚨 Troubleshooting
-
-### Проблемы с подключением к БД
-1. Убедитесь, что PostgreSQL запущен: `docker-compose ps`
-2. Проверьте настройки в `config.yaml`
-3. Проверьте логи приложения
-
-### Проблемы с Kafka
-1. Убедитесь, что Kafka брокер доступен
-2. Проверьте настройки топика и группы
-3. Проверьте логи consumer'а
-
-### Проблемы с портами
-1. Убедитесь, что порты 8080 и 5432 свободны
-2. Измените порты в `config.yaml` при необходимости
+- `GET /:orderUID` - получение заказа по UID
