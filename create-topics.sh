@@ -1,5 +1,5 @@
 #!/bin/bash
-sleep 20
+sleep 30
 kafka-topics.sh \
     --bootstrap-server kafka:29092 \
     --create \

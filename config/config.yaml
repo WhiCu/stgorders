@@ -7,7 +7,7 @@ server:
 
 logger:
   level: "info" 
-  path: "./logs/kafka-consumer.log"
+  path: "logs/kafka-consumer.log"
   size: 128
   compress: true
 
@@ -17,7 +17,7 @@ kafka:
   topic: "test-topic"
   group_id: "my-group"
   worker_pool:
-    size: 10
+    size: 128
     buf: 128
 
 
@@ -27,6 +27,9 @@ storage:
   user: "user"
   password: "password"
   db: "l0_test"
+
+migrate:
+  dir: "db/migrations"
 
 cache:
   size: 128

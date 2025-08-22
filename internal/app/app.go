@@ -76,15 +76,8 @@ func (a *App) Shutdown(ctx context.Context) (err error) {
 	return nil
 }
 
-func NewApp(cfg *config.Config) *App {
+func NewApp(cfg *config.Config, log *slog.Logger) *App {
 	// Create logger
-	log := getLogger(&cfg.Logger)
-	log.Info("logger created",
-		slog.String("level", cfg.Logger.Level),
-		slog.String("path", cfg.Logger.Path),
-		slog.Int("size", cfg.Logger.Size),
-		slog.Bool("compress", cfg.Logger.Compress),
-	)
 
 	// Create storage
 	log.Info("storage created", slog.String("dsn", cfg.Storage.DSN()))

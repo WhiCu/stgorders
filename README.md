@@ -32,7 +32,7 @@ consumer/
 ### Server
 ```yaml
 server:
-  host: "localhost"        # Хост для веб-сервера
+  host: "localhost"       # Хост для веб-сервера
   port: "8080"            # Порт веб-сервера
   read_timeout: "10s"     # Таймаут чтения запроса
   write_timeout: "30s"    # Таймаут записи ответа
@@ -49,10 +49,10 @@ server:
 ### Logger
 ```yaml
 logger:
-  level: "info"           # Уровень логирования (debug, info, warn, error)
-  path: "./logs/kafka-consumer.log"  # Путь к файлу логов
-  size: 128               # Максимальный размер файла в МБ
-  compress: false         # Сжатие старых логов
+  level: "info"                       # Уровень логирования (debug, info, warn, error)
+  path: "./logs/kafka-consumer.log"   # Путь к файлу логов
+  size: 128                           # Максимальный размер файла в МБ
+  compress: false                     # Сжатие старых логов
 ```
 
 **Переменные окружения:**
@@ -70,8 +70,8 @@ logger:
 kafka:
   brokers:                # Список Kafka брокеров
     - "localhost:9092"
-  topic: "topic"     # Топик для чтения сообщений
-  group_id: "group"    # ID группы потребителей
+  topic: "topic"          # Топик для чтения сообщений
+  group_id: "group"       # ID группы потребителей
   worker_pool:            # Настройки пула воркеров
     size: 10              # Количество воркеров
     buf: 128              # Размер буфера сообщений
@@ -94,7 +94,7 @@ storage:
   port: "5432"            # Порт базы данных
   user: "user"            # Пользователь БД
   password: "password"    # Пароль пользователя
-  db: "db"          # Имя базы данных
+  db: "db"                # Имя базы данных
 ```
 
 **Переменные окружения:**
@@ -103,6 +103,15 @@ storage:
 - `DB_USER` - пользователь базы данных
 - `DB_PASSWORD` - пароль пользователя
 - `DB_NAME` - имя базы данных
+
+### Migate
+```yaml
+migrations:
+  dir: "./db/migrations"         # Директория с файлами миграции     
+```
+
+**Переменные окружения:**
+- `MIGRATE_DIR` - директория с файлами миграции
 
 ### Cache
 ```yaml
@@ -228,7 +237,7 @@ goconvey
 
 ### Логирование
 
-Логи сохраняются в папку `logs/` с ротацией файлов (LOGGER_PATH != "").
+Логи сохраняются в папку `logs/kafka-consumer.log` с ротацией файлов (*Если LOGGER_PATH  задан по умолчанию*).
 
 ### Переменные окружения
 
@@ -240,4 +249,4 @@ goconvey
 
 - `GET /ping` - проверка работоспособности
 - `GET /` - главная страница
-- `GET /:orderUID` - получение заказа по UID
+- `GET /:orderUID` - получение заказа по UID в формате json

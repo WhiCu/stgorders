@@ -49,12 +49,17 @@ type CacheConfig struct {
 	Size int `yaml:"size" env:"CACHE_SIZE"`
 }
 
+type MigrateConfig struct {
+	Dir string `yaml:"dir" env:"MIGRATE_DIR"`
+}
+
 type Config struct {
 	Server  ServerConfig  `yaml:"server"`
 	Storage StorageConfig `yaml:"storage"`
 	Logger  LoggerConfig  `yaml:"logger"`
 	Kafka   KafkaConfig   `yaml:"kafka"`
 	Cache   CacheConfig   `yaml:"cache"`
+	Migrate MigrateConfig `yaml:"migrate"`
 }
 
 func (srv *ServerConfig) ServerAddr() string {

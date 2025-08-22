@@ -15,7 +15,7 @@ COPY config config
 # RUN go build -o /out/app ./cmd/app
 
 RUN CGO_ENABLED=0 \
-    go build -trimpath -ldflags "-s -w" -o /out/app ./cmd/app
+    go build -trimpath -ldflags "-s -w" -o /out/stgorders ./cmd/
 
 EXPOSE 8080
 
@@ -29,12 +29,13 @@ FROM alpine:3.22.0 AS runtime
 
 WORKDIR /src
 
-COPY --from=builder /out/app /src/app
+COPY --from=builder /out/stgorders /src/stgorders
 
 COPY config/config.yaml /src/config/config.yaml
+COPY db/migrations /src/db/migrations 
 
 EXPOSE 8080
 
 ENV PATH_CONFIG=/src/config/config.yaml
 
-ENTRYPOINT ["/src/app"]
+ENTRYPOINT ["/src/stgorders", "-t"]

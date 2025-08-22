@@ -9,7 +9,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      # - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d l0_test"]
@@ -37,8 +37,6 @@ services:
       - ALLOW_PLAINTEXT_LISTENER=yes
       - KAFKA_CFG_ADVERTISED_LISTENERS=EXTERNAL://localhost:9092,PLAINTEXT://kafka:29092
       - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
-    # volumes:
-    #   - ./create-topics.sh:/docker-entrypoint-initdb.d/create-topics.sh
     healthcheck:
       test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server kafka:9092 --list || exit 1"]
       interval: 10s

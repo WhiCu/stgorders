@@ -1,23 +1,22 @@
-package main
+package app
 
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/WhiCu/stgorders/internal/app"
 	"github.com/WhiCu/stgorders/internal/config"
 )
 
-func main() {
-	cfg := config.MustLoadWithEnv()
-
-	app := app.NewApp(cfg)
+func NewAPP(cfg *config.Config, log *slog.Logger) error {
+	app := app.NewApp(cfg, log)
 
 	ctx := context.Background()
 
 	if err := app.Run(ctx); err != nil {
-		log.Fatalf(`
+		log.Error("Server failed to start", slog.String("ERR", err.Error()))
+		fmt.Printf(`
 	==================================
 	=                                =
 	=    Server failed to start     =
@@ -25,7 +24,9 @@ func main() {
 	==================================
 %v
 		`, err)
+		return err
 	}
+	log.Info("server successfully stopped")
 	fmt.Println(`
 	==================================
 	=                                =
@@ -33,4 +34,5 @@ func main() {
 	=                                =
 	==================================
 	`)
+	return nil
 }

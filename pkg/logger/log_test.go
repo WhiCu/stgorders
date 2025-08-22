@@ -1,4 +1,4 @@
-package app
+package logger
 
 import (
 	"testing"
@@ -10,7 +10,7 @@ import (
 func TestGetLogger(t *testing.T) {
 	Convey("getLogger builds logger without file", t, func() {
 		cfg := &config.LoggerConfig{Level: "debug", Path: "", Size: 1, Compress: false}
-		l := getLogger(cfg)
+		l := GetLogger(cfg)
 		So(l, ShouldNotBeNil)
 	})
 }

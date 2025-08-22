@@ -1,15 +1,14 @@
-package app
+package logger
 
 import (
 	"log/slog"
 
 	"github.com/WhiCu/stgorders/internal/config"
-	"github.com/WhiCu/stgorders/pkg/logger"
 	slogmulti "github.com/samber/slog-multi"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-func getLogger(cfg *config.LoggerConfig) *slog.Logger {
+func GetLogger(cfg *config.LoggerConfig) *slog.Logger {
 	h := make([]slog.Handler, 0, 2)
 
 	if cfg.Path != "" {
@@ -25,7 +24,7 @@ func getLogger(cfg *config.LoggerConfig) *slog.Logger {
 		}))
 	}
 
-	h = append(h, logger.MustInitLogger(cfg.Level))
+	h = append(h, MustInitLogger(cfg.Level))
 
 	return slog.New(slogmulti.Fanout(h...))
 

@@ -32,7 +32,7 @@ func NewWorkerPool[T any](workers int, workerFn func(T) error, buf int, log ...*
 	}
 
 	wp.wg.Add(workers)
-	for i := 0; i < workers; i++ {
+	for i := range workers {
 		go func() {
 			var err error
 			log := wp.log.With(slog.Int("workerID", i))
