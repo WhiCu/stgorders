@@ -15,7 +15,11 @@
 
 ```
 consumer/
-├── cmd/app/           # Точка входа в приложение
+├── cmd/                # Точки входа в приложение
+│   ├── app/           # Основное приложение (веб-сервер + Kafka consumer)
+│   ├── cli/           # CLI интерфейс с подкомандами (cobraCLI)
+│   ├── kafka/         # Утилиты для работы с Kafka
+│   └── migrate/       # Утилиты для миграций БД
 ├── config/            # Конфигурационные файлы
 ├── db/               # База данных и миграции
 ├── internal/         # Внутренняя логика приложения
@@ -25,6 +29,49 @@ consumer/
 │   └── web-interface/   # Веб-интерфейс
 ├── pkg/              # Переиспользуемые пакеты
 └── docker-compose.yml # Docker окружение
+```
+
+### Основная команда
+
+```bash
+# Запуск основного приложения (веб-сервер + Kafka consumer)
+stgorders
+
+# С флагом для создания Kafka топика
+stgorders --topic
+# или
+stgorders -t
+```
+
+### Подкоманды
+
+#### `stgorders app`
+Запуск основного приложения (веб-сервер + Kafka consumer):
+```bash
+stgorders app
+```
+
+#### `stgorders migrate`
+Запуск миграций базы данных:
+```bash
+stgorders migrate
+```
+
+#### `stgorders topic`
+Создание Kafka топика:
+```bash
+stgorders topic
+```
+
+### Сборка CLI
+
+```bash
+# Сборка CLI приложения
+go build -o ./tmp/bin/stgorders.exe ./cmd/cli
+
+# Или через Task
+task build        # Сборка основного приложения
+task build:cli    # Сборка CLI приложения
 ```
 
 ## Конфигурация (config.yaml)
@@ -136,7 +183,7 @@ cache:
 
 **Основные переменные:**
 ```bash
-# Путь к конфигурационному файлу
+# Путь к конфигурационному файлу (по умолчанию: config/config.yaml)
 PATH_CONFIG=/path/to/config.yaml
 
 # Настройки сервера
@@ -186,34 +233,32 @@ docker-compose up -d
 - **Kafka**: KRaft режим без Zookeeper, внутренний порт 29092 для контейнеров
 - **Consumer**: многоэтапная сборка через Dockerfile, автоматические зависимости
 
+**Примечание:** При использовании CLI (`stgorders`) миграции БД запускаются автоматически при старте приложения.
+
 **Особенности Dockerfile:**
 - Многоэтапная сборка: `golang:1.25-alpine` → `alpine:3.22.0`
 - Статическая компиляция с `CGO_ENABLED=0`
 - Минимальный размер образа (без shell, пакетного менеджера)
-
-#### Локальная сборка
-
-```bash
-# Сборка
-go build -o ./tmp/bin/main.exe ./cmd/app/main.go
-
-# Или через Task
-task build
-```
+- Сборка CLI приложения с cobraCLI
 
 ### Запуск приложения
 
 #### Локально
 
 ```bash
-# Запуск собранного бинарника
-./tmp/bin/main.exe
 
 # Или запуск напрямую
 go run ./cmd/app/main.go
 
 # Или через Task
-task run
+task run          # Запуск основного приложения
+task run:cli      # Запуск CLI приложения
+
+# Запуск через CLI (рекомендуется)
+./tmp/bin/stgorders.exe
+
+# Или запуск CLI напрямую
+go run ./cmd/main.go
 ```
 
 ### Тестирование
@@ -239,9 +284,6 @@ goconvey
 
 Логи сохраняются в папку `logs/kafka-consumer.log` с ротацией файлов (*Если LOGGER_PATH  задан по умолчанию*).
 
-### Переменные окружения
-
-Поддерживается загрузка переменных из `.env` файла.
 
 ## API Endpoints
 

@@ -25,12 +25,26 @@ tasks:
       - echo "Build the application"
       - go build -o {{.PATH_EXE}}/main.exe {{.PATH_MAIN_API}}/main.go
 
+  build:cli:
+    desc: Build the CLI application
+    deps: [test]
+    cmds:
+      - echo "Build the CLI application"
+      - go build -o {{.PATH_EXE}}/stgorders.exe ./cmd/main.go
+
   run:
     desc: Run the application
     # deps: [test]
     cmds:
       - echo "Run the application"
       - go run {{.PATH_MAIN_API}}/main.go
+
+  run:cli:
+    desc: Run the CLI application
+    # deps: [test]
+    cmds:
+      - echo "Run the CLI application"
+      - go run ./cmd/main.go
 
   air:
     desc: Run air
