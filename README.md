@@ -153,7 +153,7 @@ storage:
 
 ### Migate
 ```yaml
-migrations:
+migrate:
   dir: "./db/migrations"         # Директория с файлами миграции     
 ```
 
