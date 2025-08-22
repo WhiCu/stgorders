@@ -265,7 +265,7 @@ go run ./cmd/main.go
 
 #### GoConvey 
 
-Проект использует **GoConvey**
+Проект использует [**GoConvey**](https://github.com/smartystreets/goconvey)
 
 #### Запуск тестов
 
@@ -278,6 +278,42 @@ task test
 
 # GoConvey веб-интерфейс
 goconvey
+```
+
+### Banchmarking
+
+#### bombardier  
+
+Проект использует [**bombardier**](https://github.com/codesenberg/bombardier)
+
+#### Cache ON
+
+```bash
+Bombarding http://localhost:8080/order/b563feb7b2b84b6test1 with 1000000 request(s) using 125 connection(s)
+ 1000000 / 1000000 [=================================================] 100.00% 23407/s 42s
+Done!
+Statistics        Avg      Stdev        Max
+  Reqs/sec     23428.77    5937.70   35345.12
+  Latency        5.33ms    10.90ms      1.13s
+  HTTP codes:
+    1xx - 0, 2xx - 1000000, 3xx - 0, 4xx - 0, 5xx - 0
+    others - 0
+  Throughput:    23.39MB/s
+```
+
+#### Cache OFF
+
+```bash
+Bombarding http://localhost:8080/order/b563feb7b2b84b6test1 with 1000000 request(s) using 125 connection(s)
+ 1000000 / 1000000 [=================================================] 100.00% 11850/s 1m24s
+Done!
+Statistics        Avg      Stdev        Max
+  Reqs/sec     11879.31    2345.07   33052.88
+  Latency       10.53ms     5.93ms   720.88ms
+  HTTP codes:
+    1xx - 0, 2xx - 1000000, 3xx - 0, 4xx - 0, 5xx - 0
+    others - 0
+  Throughput:    11.85MB/s
 ```
 
 ### Логирование

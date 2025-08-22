@@ -9,7 +9,6 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      # - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d l0_test"]
@@ -54,7 +53,8 @@ services:
     environment:
       - DB_HOST=db
       - KAFKA_BROKERS=kafka:29092
-      - LOG_LEVEL=debug
+      - LOG_LEVEL=info
+      - CACHE_SIZE=128
     depends_on:
       db:
         condition: service_healthy

@@ -23,7 +23,7 @@ var rootCmd = &cobra.Command{
 	Long:    ``,
 	Version: "0.0.1",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) (err error) {
-		cfg, err = config.LoadWithDefault("config/config.yaml")
+		cfg, err = config.LoadWithEnv()
 		if err != nil {
 			return err
 		}
