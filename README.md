@@ -284,7 +284,7 @@ task test
 goconvey
 ```
 
-### Banchmarking
+### Benchmark
 
 #### bombardier  
 
