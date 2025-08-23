@@ -53,7 +53,7 @@ sequenceDiagram
   server ->> cache: get order
   alt order found
     alt cahce hit
-       cahce ->> server: order
+       cache ->> server: order
     else cache miss
       cache ->> server: error
       server ->> db: get order
