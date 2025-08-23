@@ -4,8 +4,8 @@ import (
 	"log/slog"
 
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres" // импорт драйвера для Postgres
-	_ "github.com/golang-migrate/migrate/v4/source/file"       // импорт источника из файловой системы
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 func MigrateDB(dsn string, migrateDir string, log *slog.Logger) error {

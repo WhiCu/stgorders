@@ -40,7 +40,7 @@ func NewWorkerPool[T any](workers int, workerFn func(T) error, buf int, log ...*
 			defer wp.wg.Done()
 			for task := range wp.tasks {
 				log.Debug("task received")
-				err = func() error { // отдельный блок для recover
+				err = func() error {
 					defer func() {
 						if r := recover(); r != nil {
 							log.WithGroup("panic").Error("recovered panic in worker", slog.Any("ERR", r))

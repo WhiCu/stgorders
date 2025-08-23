@@ -164,36 +164,3 @@ func (a *App) Run(ctx context.Context) error {
 
 	return eg.Wait()
 }
-
-// func (a *App) Run(ctx context.Context) error {
-// 	ctx, cancel := context.WithCancel(ctx)
-// 	defer cancel()
-
-// 	go a.gracefulShutdown(ctx, cancel)
-
-// 	a.log.Info("starting server")
-// 	if err := a.csm.ListenAndServe(ctx); err != nil {
-// 		a.log.Error("could not listen", slog.String("ERR", err.Error()))
-// 		return err
-// 	}
-
-// 	return <-a.done
-// }
-
-// func (a *App) RunWithRecover(ctx context.Context) (err error) {
-// 	for {
-// 		err = func() error {
-// 			defer func() {
-// 				if r := recover(); r != nil {
-// 					log := a.log.WithGroup("panic")
-// 					log.Error("recovered from panic", slog.Any("ERR", r))
-// 				}
-// 			}()
-// 			return a.Run(ctx)
-// 		}()
-// 		if err != nil {
-// 			a.log.Error("could not run", slog.String("ERR", err.Error()))
-// 			return err
-// 		}
-// 	}
-// }

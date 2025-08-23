@@ -15,6 +15,59 @@
 - **Kafka Consumer** - обрабатывает сообщения из Kafka топиков
 - **Web Interface** - предоставляет HTTP API для работы с данными
 
+## How it works
+
+### kafka-consumer
+
+```mermaid
+sequenceDiagram
+    client -) kafka: message
+    kafka -) handler: message
+    handler ->> service: serve message
+    service -> service: serve
+    service ->> storage: save message
+    storage ->> db: save message
+
+    alt success save
+        db ->> storage: success
+        storage -->> cache: save
+        opt could not set cache
+            cache ->> storage: error 
+        end
+        storage ->> service: success
+        service ->> handler: success
+        handler ->> kafka: commit message
+    else could not save
+        db ->> storage: error
+        storage ->> service: error
+        service ->> handler: error
+        handler ->> kafka: abort message
+    end
+  
+```
+### web-interface
+
+```mermaid
+sequenceDiagram
+  client ->> server: GET /order/:orderUID
+  server ->> cache: get order
+  alt order found
+    alt cahce hit
+       cahce ->> server: order
+    else cache miss
+      cache ->> server: error
+      server ->> db: get order
+      db ->> server: order
+    end
+  server ->> client: order
+  else order not found
+    cache ->> server: error
+    server ->> db: get order
+    db ->> server: error
+    server ->> client: error
+  end
+```
+
 ## Структура проекта
 
 ```
